@@ -19,15 +19,15 @@ OUT = logs/log.out
 ERR = logs/log.err
 HIDE = >> $(OUT) 2>> $(ERR)
 
-all_pdfs: main.pdf $(SUBFILE_PDFS)
+thesis: thesis.pdf $(SUBFILE_PDFS)
 	mkdir -p ./pdfs
 	find . -path ./pdfs -prune -o -name "*.pdf" -exec cp {} pdfs \;
 
-.PHONY: all_pdfs
+.PHONY: thesis
 
-main.pdf: main.tex $(SUBFILE_TEXS)
+thesis.pdf: thesis.tex $(SUBFILE_TEXS)
 	rm -f $(OUT) $(ERR)
-	$(LATEXMK) main.tex $(HIDE); $(CLEAR) $(HIDE)
+	$(LATEXMK) thesis.tex $(HIDE); $(CLEAR) $(HIDE)
 
 %.pdf: %.tex
 	cd $(<D); $(LATEXMK) $(<F) $(HIDE); $(CLEAR) $(HIDE)

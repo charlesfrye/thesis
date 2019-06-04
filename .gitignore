@@ -1,4 +1,5 @@
 # latexmk outputs
+*.aux
 *.run.xml
 *.bbl
 
