@@ -1,0 +1,42 @@
+\documentclass{ucbthesis}
+\usepackage{biblatex}
+\usepackage{subfiles}
+
+% Double spacing, if you want it.  Do not use for the final copy.
+% \def\dsp{\def\baselinestretch{2.0}\large\normalsize}
+% \dsp
+
+% If the Grad. Division insists that the first paragraph of a section
+% be indented (like the others), then include this line:
+% \usepackage{indentfirst}
+
+\newtheorem{theorem}{Jibberish}
+
+\bibliography{references}
+
+\hyphenation{mar-gin-al-ia}
+\hyphenation{bra-va-do}
+
+% In preamble, define commands to be used in subfile
+\newcommand{\onlyinsubfile}[1]{#1}
+\newcommand{\notinsubfile}[1]{}
+
+\begin{document}
+
+% This only runs when main.tex is being compiled, and swaps it to only print in the main
+\renewcommand{\onlyinsubfile}[1]{}
+\renewcommand{\notinsubfile}[1]{#1}
+
+\subfile{other/frontmatter/frontmatter}
+
+\subfile{chapters/chapter1/chapter1}
+\subfile{chapters/chapter2/chapter2}
+
+% \appendix
+% \chapter{More Monticello Candidates}
+
+% \subfile{other/backmatter/bibliography}
+
+\notinsubfile{\printbibliography}
+
+\end{document}

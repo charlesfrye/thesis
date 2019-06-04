@@ -1,0 +1,9 @@
+# latexmk outputs
+*.run.xml
+*.bbl
+
+# pdfs
+*.pdf
+
+# OS X files
+.DS_Store
