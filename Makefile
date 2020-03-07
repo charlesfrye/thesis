@@ -1,7 +1,7 @@
 # Makefile
 
 # Create lists for chapter filenames
-CHAPTER_NAMES = chapter1 chapter2
+CHAPTER_NAMES = chapter1 chapter2 chapter3
 CHAPTER_DIRECTORIES = $(addprefix chapters/, $(addsuffix /, $(CHAPTER_NAMES)))
 CHAPTER_PDFS = $(join $(CHAPTER_DIRECTORIES), $(addsuffix .pdf, $(CHAPTER_NAMES)))
 CHAPTER_TEXS = $(CHAPTER_PDFS:.pdf=.tex)
