@@ -1,0 +1,244 @@
+% From github.com/ee227c/ee227c.github.io
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage[linesnumbered]{algorithm2e}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{url,ifthen}
+\usepackage{enumitem}
+\usepackage{srcltx}
+\usepackage{multirow}
+\usepackage{boxedminipage}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{nicefrac}
+\usepackage{xspace}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\definecolor{DarkGreen}{rgb}{0.1,0.5,0.1}
+\definecolor{DarkRed}{rgb}{0.5,0.1,0.1}
+\definecolor{DarkBlue}{rgb}{0.1,0.1,0.5}
+\definecolor{Gray}{rgb}{0.2,0.2,0.2}
+
+\usepackage[small]{caption}
+\usepackage[pdftex]{hyperref}
+\hypersetup{
+    unicode=false,          % non-Latin characters in Acrobat?s bookmarks
+    pdftoolbar=true,        % show Acrobat toolbar?
+    pdfmenubar=true,        % show Acrobat menu?
+    pdffitwindow=false,      % page fit to window when opened
+    pdfnewwindow=true,      % links in new window
+    colorlinks=false,       % false: boxed links; true: colored links
+    linkcolor=DarkBlue,          % color of internal links
+    citecolor=DarkGreen,        % color of links to bibliography
+    filecolor=DarkRed,      % color of file links
+    urlcolor=DarkBlue,          % color of external links
+    pdftitle={Finding the Critical Points of Neural Network Loss Surfaces},
+    pdfauthor={Charles Frye},
+}
+
+
+% Macros for latex references, creates proper hyperlinks
+\newcommand{\chapterlabel}[1]{\label{ch:#1}}
+\newcommand{\chapterref}[1]{\hyperref[ch:#1]{Chapter~\ref{ch:#1}}}
+\newcommand{\equationlabel}[1]{\label{eq:#1}}
+\newcommand{\equationref}[1]{\hyperref[eq:#1]{Equation~\ref{eq:#1}}}
+\newcommand{\examplelabel}[1]{\label{ex:#1}}
+\newcommand{\exampleref}[1]{\hyperref[ex:#1]{Example~\ref{ex:#1}}}
+\newcommand{\figurelabel}[1]{\label{fig:#1}}
+\newcommand{\figureref}[1]{\hyperref[fig:#1]{Figure~\ref{fig:#1}}}
+\newcommand{\tablelabel}[1]{\label{tab:#1}}
+\newcommand{\tableref}[1]{\hyperref[tab:#1]{Table~\ref{tab:#1}}}
+\newcommand{\itemlabel}[1]{\label{item:#1}}
+\newcommand{\itemref}[1]{\hyperref[item:#1]{Item~(\ref{item:#1})}}
+\newcommand{\sectionlabel}[1]{\label{sec:#1}}
+\newcommand{\sectionref}[1]{\hyperref[sec:#1]{Section~\ref{sec:#1}}}
+
+% Expectation, Probability, Variance
+\newcommand{\Esymb}{\mathbb{E}}
+\newcommand{\Psymb}{\mathbb{P}}
+\newcommand{\Vsymb}{\mathbb{V}}
+\DeclareMathOperator*{\E}{\Esymb}
+\DeclareMathOperator*{\Var}{\Vsymb}
+\DeclareMathOperator*{\ProbOp}{\Psymb r}
+\renewcommand{\Pr}{\ProbOp}
+\newcommand{\prob}[1]{\Pr\big\{ #1 \big\}}
+\newcommand{\Prob}[1]{\Pr\left\{ #1 \right\}}
+\newcommand{\varprob}[1]{\Pr\big( #1 \big)}
+\newcommand{\varProb}[1]{\Pr\left( #1 \right)}
+\newcommand{\ex}[1]{\E\big[#1\big]}
+\newcommand{\Ex}[1]{\E\left[#1\right]}
+\newcommand{\varex}[1]{\E\paren{#1}}
+\newcommand{\varEx}[1]{\E\Paren{#1}}
+
+\newcommand{\widebar}[1]{\overline{#1}}
+\renewcommand{\hat}{\widehat}
+
+% punctuation at the end of a displayed formula
+\newcommand{\mper}{\,.}
+\newcommand{\mcom}{\,,}
+
+
+% cally fonts
+\newcommand{\cA}{{\mathcal A}}
+\newcommand{\cB}{{\mathcal B}}
+\newcommand{\cC}{{\mathcal C}}
+\newcommand{\cD}{{\mathcal D}}
+\newcommand{\cE}{{\mathcal E}}
+\newcommand{\cF}{{\mathcal F}}
+\newcommand{\cG}{{\mathcal G}}
+\newcommand{\cH}{{\mathcal H}}
+\newcommand{\cI}{{\mathcal I}}
+\newcommand{\cJ}{{\mathcal J}}
+\newcommand{\cK}{{\mathcal K}}
+\newcommand{\cL}{{\mathcal L}}
+\newcommand{\cM}{{\mathcal M}}
+\newcommand{\cN}{{\mathcal N}}
+\newcommand{\cO}{{\mathcal O}}
+\newcommand{\cP}{{\mathcal P}}
+\newcommand{\cQ}{{\mathcal Q}}
+\newcommand{\cR}{{\mathcal R}}
+\newcommand{\cS}{{\mathcal S}}
+\newcommand{\cT}{{\mathcal T}}
+\newcommand{\cU}{{\mathcal U}}
+\newcommand{\cV}{{\mathcal V}}
+\newcommand{\cW}{{\mathcal W}}
+\newcommand{\cX}{{\mathcal X}}
+\newcommand{\cY}{{\mathcal Y}}
+\newcommand{\cZ}{{\mathcal Z}}
+
+
+\newcommand{\dom}{\mathrm{dom}}
+\newcommand{\Epi}{\mathrm{Epi}}
+\newcommand{\Int}{\mathrm{Int} }
+\newcommand{\Bd}{\mathrm{Bd}}
+\newcommand{\Conv}{\mathrm{Conv}}
+
+% binary relations
+\newcommand{\defeq}{\stackrel{\small \mathrm{def}}{=}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\le}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\renewcommand{\ge}{\geqslant}
+
+% parentheses
+\newcommand{\paren}[1]{(#1 )}
+\newcommand{\Paren}[1]{\left(#1 \right )}
+
+% brackets
+\newcommand{\brac}[1]{[#1 ]}
+\newcommand{\Brac}[1]{\left[#1 \right]}
+
+% set braces
+\newcommand{\set}[1]{\{#1\}}
+\newcommand{\bigset}[1]{\bigl\{#1\bigr\}}
+\newcommand{\Set}[1]{\left\{#1\right\}}
+
+% absolute value sign
+\newcommand{\abs}[1]{\lvert#1\rvert}
+\newcommand{\Abs}[1]{\left\lvert#1\right\rvert}
+\newcommand{\card}[1]{\lvert#1\rvert}
+\newcommand{\Card}[1]{\left\lvert#1\right\rvert}
+
+% norm
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\newcommand{\Norm}[1]{\left\lVert#1\right\rVert}
+
+% declare function f as $f \from X \to Y$
+\newcommand{\from}{\colon}
+
+% differential as in "\int x\rd x"
+\newcommand\rd{\,\mathrm{d}}
+
+% sets
+\newcommand{\bits}{\{0,1\}}
+\newcommand{\signs}{\{-1,1\}}
+\renewcommand{\Re}{\mathbb{R}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\C}{\mathbb C}
+\newcommand{\N}{\mathbb N}
+\newcommand{\varR}{\Re}
+\newcommand{\Rnn}{\R_+}
+\newcommand{\varRnn}{\varR_+}
+
+% qed symbol
+\renewcommand{\qedsymbol}{{$\blacksquare$}}
+
+% bold vector notation
+\usepackage{bm}
+\renewcommand{\vec}[1]{{\bm{#1}}}
+
+% linear algebra
+\DeclareMathOperator*{\range}{range}
+\newcommand{\Mid}{\ensuremath{~\Big|~}}
+\newcommand{\tr}{\mathrm{tr}}
+\newcommand{\trans}{\top}
+\newcommand{\pinv}{\dagger}
+\newcommand{\iprod}[1]{\langle #1\rangle}
+\newcommand{\isqur}[1]{\langle #1,#1\rangle}
+\newcommand{\trsp}[1]{#1^\trans}
+\newcommand{\smallrmtrsp}[1]{#1^{\scriptscriptstyle \mathrm{T}}}
+\newcommand{\oprod}[2]{\trsp{#1} #2}
+\newcommand{\osqur}[1]{\oprod{#1}{#1}}
+% transposed of a vector
+\newcommand{\trspvec}[1]{{\trsp{\vec{#1}}}}
+% norm
+\newcommand{\snorm}[1]{\norm{#1}^2}
+% L2 norm
+\newcommand{\normt}[1]{\norm{#1}_{\scriptstyle 2}}
+\newcommand{\varnormt}[1]{\norm{#1}_{\scriptscriptstyle 2}}
+\newcommand{\snormt}[1]{\normt{#1}^2}
+% L1 norm
+\newcommand{\normo}[1]{\norm{#1}_{\scriptstyle 1}}
+\newcommand{\Normo}[1]{\Norm{#1}_{\scriptstyle 1}}
+\newcommand{\varnormo}[1]{\norm{#1}_{\scriptscriptstyle 1}}
+% Linfty norm
+\newcommand{\normi}[1]{\norm{#1}_{\scriptstyle \infty}}
+\newcommand{\varnormi}[1]{\norm{#1}_{\scriptscriptstyle \infty}}
+
+% super set with parentheses
+\newcommand{\super}[2]{#1^{\paren{#2}}}
+\newcommand{\varsuper}[2]{#1^{\scriptscriptstyle\paren{#2}}}
+
+% Indictator function
+\newcommand{\Ind}{\mathbb I}
+
+% common abbrevs
+\newcommand{\ignore}[1]{}
+\newcommand{\OPT}{\mathrm{OPT}}
+\newcommand{\opt}{\mathrm{opt}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\TV}{\mathrm{TV}}
+\newcommand{\sign}{\mathit{sign}}
+\newcommand{\polylog}{{\rm polylog}}
+\newcommand{\poly}{{\rm poly}}
+\newcommand{\vol}{\mathrm{vol}}
+\newcommand{\supp}{\mathrm{supp}}
+\newcommand{\nuc}{\mathrm{nuc}}
+\newcommand{\op}{\mathrm{op}}
+
+% distributions
+\newcommand{\Normal}{\mathrm{Normal}}
+\newcommand{\Laplace}{\mathrm{Lap}}
+\newcommand{\Lap}{\Laplace}
+\newcommand{\Exp}{\mathrm{Exp}}
+\newcommand{\Bin}{\mathrm{Bin}}
+\newcommand{\Ber}{\mathrm{Ber}}
+\newcommand{\Hell}{\mathrm{H}}
+
+\newcommand{\boldbeta}{\boldsymbol{\beta}}
+\newcommand{\boldp}{\boldsymbol{p}}
+
+\newcommand{\unifsim}{\overset{\mathrm{unif}}{\sim}}
+\newcommand{\domain}{\Omega}
+\newcommand{\epi}{\mathrm{epi}}
+
+\newcommand{\argmin}{\mathop{\rm argmin}}
+\newcommand{\argmax}{\mathop{\rm argmax}}
+
+\newcommand{\conv}{\mathop{\rm conv}}
+% \span is already a latex macro
+\newcommand{\Span}{\mathop{\rm span}}
