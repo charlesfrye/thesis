@@ -11,7 +11,7 @@ SUBFILE_PDFS = $(CHAPTER_PDFS)
 SUBFILE_TEXS = $(CHAPTER_TEXS)
 
 # Command for latexmk to generate pdf only
-LATEXMK = latexmk -pdf -dvi- -ps- -quiet -silent
+LATEXMK = latexmk -f -pdf -dvi- -ps- -quiet -silent
 CLEAR = latexmk -c
 
 # Handling the extremely verbose output of latexmk
