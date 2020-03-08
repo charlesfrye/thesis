@@ -43,7 +43,39 @@ We need to go over notation,
 from $\cA$ to $\cZ$.
 
 A vector is $\vec{x}$.
+If it's a random variable vector,
+$\vec{x}\sim\Normal\left(0, \Sigma)$,
+we might write $\Ex{x} = 0$ and
+$\Var\left(x\right) = \Sigma$.
 
+An estimate of $\theta$ is $\widebar{\theta}$,
+or perhaps $\hat{\theta}$.
+
+We sometimes punctuate our formulas,
+like in \equationref{eg} below:
+\begin{equation}\equationlabel{eg}
+	\hat{\mu} \defeq \frac{1}{n} \sum_{x_i \in X} x_i\mper
+\end{equation}
+
+We'll often worry about the norm of a vector,
+$\normt{\vec{x}}$.
+Recall that the norm, which is a map
+$\normt{\cdot} \from \R^n \to \R$,
+is defined via
+\[
+	\snormt{\vec{x}} \defeq \trspvec{x}\vec{x}
+\]
+When unambiguous, we will simply write $\norm{\vec{x}}$
+and $\snorm{\vec{x}}$.
+
+The linear subspace a matrix $M$ maps to $\vec{0}$
+is denoted by $\ker{M}$,
+and its orthogonal complement by $\co{\ker{M}}$.
+
+This will be important whenever
+$\grad{f}{\theta} \in \ker\hess{f}{\theta}$,
+and
+$\sgn{f}{\theta} > 0$.
 
 \onlyinsubfile{\printbibliography}
 
