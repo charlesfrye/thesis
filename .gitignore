@@ -1,7 +1,5 @@
 # latexmk outputs
-*.aux
-*.run.xml
-*.bbl
+*.log
 
 # pdfs
 *.pdf

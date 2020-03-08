@@ -12,7 +12,7 @@ SUBFILE_TEXS = $(CHAPTER_TEXS)
 
 # Command for latexmk to generate pdf only
 LATEXMK = latexmk -f -pdf -dvi- -ps- -quiet -silent
-CLEAR = latexmk -c
+CLEAR = git clean -f
 
 # Handling the extremely verbose output of latexmk
 OUT = logs/log.out
