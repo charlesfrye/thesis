@@ -31,3 +31,11 @@ thesis.pdf: thesis.tex $(SUBFILE_TEXS)
 
 %.pdf: %.tex
 	cd $(<D); $(LATEXMK) $(<F) $(HIDE); $(CLEAR) $(HIDE)
+
+chapter1: chapters/chapter1/chapter1.pdf
+chapter2: chapters/chapter2/chapter2.pdf
+#chapter3: chapters/chapter3/chapter3.pdf
+
+.PHONY: chapter1
+.PHONY: chapter2
+.PHONY: chapter3
