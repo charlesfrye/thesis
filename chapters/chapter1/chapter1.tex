@@ -30,7 +30,124 @@
 \caption{The author on completing the PhD.}}
 \end{figure}
 
-This is \chapterref{one}.
+\section{Overview}\sectionlabel{overview}
+
+It is typical to present only the polished final
+products of scientific research,
+rather than the process itself.
+This is exemplified by the advice to
+\enquote{write papers backwards},
+from the results and conclusions to the introduction and rationale.
+While this perhaps makes the research more digestible and
+certainly makes it more impressive,
+it hides the confusion and failure
+that are the day-to-day reality of research.
+In this brief overview,
+I will try to tell the story of the research project
+laid out in this thesis as it was experienced,
+warts and all,
+and in terms comprehensible to a wide audience.
+
+Neural networks are machine learning systems
+that are, as of the writing of this thesis in 2020,
+to say nothing of the beginning of this research project in 2016,
+widely used but poorly understood.
+The original purpose of the research was to
+understand how the
+architecture, dataset, and training method
+interact to determine which neural network training problems
+are easy.
+The approach was inspired by methods from chemical physics~\cite{ballard2017}
+and based on an analogy between a physical system minimizing its energy
+and a machine learning system maximizing its performance.
+Conceptually, the goal is to characterize all of the configurations
+in which the system is stable,
+the \emph{critical points} or \emph{stationary points}
+of the system.
+The details of this problem setup are the substance
+of the remainder of this chapter.
+
+Our intent was to build on the work
+of~\cite{dauphin2014} and~\cite{pennington2017},
+who had reported a characterization of critical points in
+some small, simple neural networks.
+We hoped to increase the scale of the networks to something
+closer to what is used in practice,
+to try more types of neural networks,
+and especially to examine the role of the dataset.
+
+The first step in characterizing the critical points is finding them.
+In general, they can't be derived or written in elementary mathematical terms,
+and so need to be discovered numerically,
+just as highly-performant neural networks have their parameters set
+by numerical algorithms rather than by analyutical derivations.
+Our early attempts to reproduce the results
+in~\cite{dauphin2014} and~\cite{pennington2017}
+appeared to be failures.
+The metric usually used to measure how close one is
+to a critical point, the squared gradient norm,
+stubbornly refused to decrease.
+
+The algorithms used to find critical points are complicated ---
+both in terms of their implementation and in terms of the number of knobs
+to twiddle to configure them, or \emph{hyperparameters} ---
+and they behave quite differently from typical machine learning algorithms,
+We had implemented these algorithms ourselves,
+due to the absence, at the beginning of this research project,
+of important technical tools in typical neural network software packages.
+We furthermore had limited expertise and experience in this domain,
+so our first thought was that we had either implemented the algorithms incorrectly
+or weren't configuring them properly.
+
+As it turned out, both of those hypotheses were correct,
+but verifying them turned out to be a research project in itself.
+The process of implementing, debugging, and tuning these algorithms
+is explained in \chapterref{two}.
+The key innovation was the introduction of the \emph{deep linear autoencoder}
+as a test problem.
+For this very special neural network,
+the critical points actually are known mathematically,
+and have been since the late 80s~\cite{baldi1989}.
+With these \enquote{correct answers} in hand,
+we can check the work of our algorithms.
+These results were written up for the arXiV
+in~\cite{frye2019}
+and rejected from ICML2019.
+
+Unfortunately, the process of debugging and tuning critical point-finding
+algorithms on the deep linear autoencoder did not solve
+our performance problems.
+It remained the case that the squared gradient norm metric was abnormally high,
+along with other signatures of bad behavior on the part of our algorithms.
+
+However, the exercise of verifying our algorithms on the deep linear autoencoder
+gave us the confidence to consider other, more fundamental causes for failure.
+In reviewing the literature on the methods used to find critical points,
+it became clear that a particular failure mode for these methods
+was not well-appreciated.
+Implicit in the literature on critical point-finding was the fact that,
+whenever a certain vector (the gradient)
+was mapped to 0 by a certain matrix (the Hessian),
+critical point-finding would fail.
+We named this condition \emph{gradient-flatness}
+and, on reviewing the outputs of our critical point-finding algorithms
+when applied to neural networks,
+we observed it ubiquitously.
+The concept of, evidence for, and consequences of gradient-flatness
+in neural networks is the focus of \chapterref{three}.
+
+The biggest take-home message of our observations for the field
+is that the famous results
+in~\cite{dauphin2014} and~\cite{pennington2017}
+need an asterisk:
+the points characterized by those papers appear to be
+gradient-flat points, not critical points,
+which has distinct consequences for our understanding of neural networks.
+
+In the remainder of this chapter,
+I will set up the problem of training neural networks,
+describe the critical point-based perspective on it,
+and lay out the major algorithms for critical point finding.
 
 \section{Intro}\sectionlabel{intro}
 
