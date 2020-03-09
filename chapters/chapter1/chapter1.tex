@@ -4,32 +4,6 @@
 
 \chapter{Neural Network Loss Surfaces, Critical Points, and Critical Point-Finding Algorithms}\chapterlabel{one}
 
-\begin{figure}\centering
-\parbox{.4\textwidth}{\centering
-\begin{picture}(70,70)
-\put(0,50){\framebox(20,20){}}
-\put(10,60){\circle*{7}}
-\put(50,50){\framebox(20,20){}}
-\put(60,60){\circle*{7}}
-\put(20,10){\line(1,0){30}}
-\put(20,10){\line(-1,1){10}}
-\put(50,10){\line(1,1){10}}
-\end{picture}
-\caption{The author before embarking on the PhD.}}
-\hfill
-\parbox{.4\textwidth}{\centering
-\begin{picture}(70,70)
-\put(0,50){\framebox(20,20){}}
-\put(10,60){\circle*{7}}
-\put(50,50){\framebox(20,20){}}
-\put(60,60){\circle*{7}}
-\put(20,10){\line(1,0){30}}
-\put(20,10){\line(-1,-1){10}}
-\put(50,10){\line(1,-1){10}}
-\end{picture}
-\caption{The author on completing the PhD.}}
-\end{figure}
-
 \section{Overview}\sectionlabel{overview}
 
 It is typical to present only the polished final
@@ -149,31 +123,55 @@ I will set up the problem of training neural networks,
 describe the critical point-based perspective on it,
 and lay out the major algorithms for critical point finding.
 
-\section{Intro}\sectionlabel{intro}
+\section{Neural Network Loss Surfaces}\sectionlabel{nnls}
 
-Neural networks are cool but mysterious~\cite{lecun2015}.
+\subsection{Notation}\sectionlabel{nn-notation}
 
-\section{Notation}\sectionlabel{notation}
+\begin{align}
+	&L\from \Theta \to \R\\
+	&L(\theta) = l(Y, \mathrm{NN}(\theta)(X), \theta)\equationlabel{loss}
+\end{align}
 
-Forget \sectionref{intro}.
-We need to go over notation,
-from $\cA$ to $\cZ$.
+\begin{align}
+	&X \in \cX, \cX \defeq \R^{m\times n} \\
+	&Y \in \cY, \cY \defeq \R^{o\times n} \\
+	&\Theta \iso \R^{N} \\
+	&\mathrm{NN}\from \Theta \to \cY^\cX
+\end{align}
 
-A vector is $\vec{x}$.
-If it's a random variable vector,
-$\vec{x}\sim\Normal\left(0, \Sigma\right)$,
-we might write $\Ex{x} = 0$ and
-$\Var\left(x\right) = \Sigma$.
+\begin{align}
+	&l\from \cY \times \cY \times \Theta \to \R\\
+	&l\left(Y, \hat{Y}, \theta\right) = c(Y, \hat{Y}) + r(\theta)\equationlabel{full-loss}
+\end{align}
 
-An estimate of $\theta$ is $\widebar{\theta}$,
-or perhaps $\hat{\theta}$.
+\begin{align}
+	&c\from \cY \times \cY \to \R\\
+	&r\from \Theta \to \R
+\end{align}
 
-We sometimes punctuate our formulas,
-like in \equationref{eg} below:
-\begin{equation}\equationlabel{eg}
-	\hat{\mu} \defeq \frac{1}{n} \sum_{x_i \in X} x_i\mper
-\end{equation}
+\begin{align}
+	&\nabla{L}\from \Theta \to \Theta\\
+	&L(\theta + \eps) = L(\theta) + \grad{L}{\theta}^\top\eps + o(\eps)
+\end{align}
 
+\begin{align}
+	&\nabla^2{L}\from \Theta \to \R^{N\times N}\\
+	&\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)
+\end{align}
+
+\begin{align}
+	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta)\equationlabel{erm}
+\end{align}
+
+\section{Critical Points}\sectionlabel{cp}
+
+\begin{align}
+	\Theta_{\textrm{cp}} &\defeq \Set{\theta \in \Theta \suchthat \grad{L}{\theta} = 0}\\
+	\Theta_{\textrm{cp}} &= \argmin_{\theta \in \Theta} \sgn{L}{\theta}\\
+	\Theta^\eps_{\textrm{cp}} &\defeq \Set{\theta \in \Theta \suchthat \grad{L}{\theta} \leq \eps}\\
+\end{align}
+
+\section{Critical Point-Finding Algorithms}\sectionlabel{cpfa}
 We'll often worry about the norm of a vector,
 $\normt{\vec{x}}$.
 Recall that the norm, which is a map
