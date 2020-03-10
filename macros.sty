@@ -2,7 +2,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
 \usepackage{amsfonts}
-\usepackage[linesnumbered]{algorithm2e}
+\usepackage[ruled,vlined]{algorithm2e}
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{url,ifthen}
@@ -54,6 +54,8 @@
 \newcommand{\itemref}[1]{\hyperref[item:#1]{Item~(\ref{item:#1})}}
 \newcommand{\sectionlabel}[1]{\label{sec:#1}}
 \newcommand{\sectionref}[1]{\hyperref[sec:#1]{Section~\ref{sec:#1}}}
+\newcommand{\algolabel}[1]{\label{algo:#1}}
+\newcommand{\algoref}[1]{\hyperref[algo:#1]{Algorithm~\ref{algo:#1}}}
 
 % Expectation, Probability, Variance
 \newcommand{\Esymb}{\mathbb{E}}
