@@ -2,7 +2,7 @@
 
 \begin{document}
 
-\chapter{Neural Network Loss Surfaces, Critical Points, and Critical Point-Finding Algorithms}\chapterlabel{one}
+\chapter{Neural Networks, Critical Points, and Critical Point-Finding Algorithms}\chapterlabel{one}
 
 \section{Overview}\sectionlabel{overview}
 
@@ -123,45 +123,161 @@ I will set up the problem of training neural networks,
 describe the critical point-based perspective on it,
 and lay out the major algorithms for critical point finding.
 
-\section{Neural Network Loss Surfaces}\sectionlabel{nnls}
+\section{Neural Networks}\sectionlabel{nnls}
 
-\subsection{Notation}\sectionlabel{nn-notation}
+Neural networks are a highly flexible class of
+differentiable functions
+suitable to a wide variety of
+machine learning tasks~\cite{lecun2015}.
+Neural networks are constructed by interleaving
+parameterized linear transformations
+with (optionally parameterized) non-linear transformations.
+The parameters are stored in a vector, $\theta$,
+and converted into a function by a network constructor $\mathrm{NN}$:
 
-\begin{align}
-	&L\from \Theta \to \R\\
-	&L(\theta) = l(Y, \mathrm{NN}(\theta)(X), \theta)\equationlabel{loss}
-\end{align}
+\begin{equation}
+	\mathrm{NN}(\theta) \from \cX \to \cY
+\end{equation}
 
-\begin{align}
-	&X \in \cX, \cX \defeq \R^{m\times n} \\
-	&Y \in \cY, \cY \defeq \R^{o\times n} \\
-	&\Theta \iso \R^{N} \\
-	&\mathrm{NN}\from \Theta \to \cY^\cX
-\end{align}
+For example,
+a \emph{fully-connected network}
+has as its parameters a tuple of weight matrices $W_i$
+and applies a non-linear function $\sigma$
+after applying each in turn:
 
-\begin{align}
-	&l\from \cY \times \cY \times \Theta \to \R\\
-	&l\left(Y, \hat{Y}, \theta\right) = c(Y, \hat{Y}) + r(\theta)\equationlabel{full-loss}
-\end{align}
+\begin{equation}
+	\mathrm{NN}\left(W_1, \dots W_{k-1}, W_k\right) = W_k \sigma \circ W_{k-1} \sigma \circ \dots \sigma \circ W_1
+\end{equation}
 
-\begin{align}
-	&c\from \cY \times \cY \to \R\\
-	&r\from \Theta \to \R
-\end{align}
+While neural networks can be used for any machine learning task,
+we will focus on the important special case of supervised learning.
+In supervised learning, a collection of inputs $X$ and targets $Y$
+are provided, and the goal is to find a function from $\cX$ to $\cY$
+such that the value of some cost function $c$ is low, on average, when applied to
+pairs of targets and their matching inputs after being passed through the network.
+Optionally, certain parameters may be considered more \enquote{costly}
+than others, and this is enforced by a regularizer $r$
+that is added to the cost.
+The result is called the \emph{loss function}
+and is defined below.
+
+\begin{equation}\equationlabel{loss-def}
+	L(\theta) \defeq \frac{1}{n}\sum_{x_i, y_i \in X, Y} c(\mathrm{NN}(\theta)(x_i), y_i) + r(\theta)
+\end{equation}
+
+Note that,
+because the parameters are the thing over which we have control,
+we think of this as a function of the parameters $\theta$,
+even though it incorporates the network architecture,
+through $\mathrm{NN}$,
+and the input and output data.
+This notation is summarized in \tableref{loss-notation}.
+
+\begin{table}[h]
+	\begin{center}
+		\begin{tabular}{rl}
+			\textbf{Name}       & \textbf{Type}                          \\
+			Inputs              & $X \from \cX^n \defeq \R^{m\times n}$  \\
+			Targets, Outputs    & $Y \from \cY^n \defeq \R^{p\times n}$  \\
+			Parameters          & $\theta \from \Theta \iso \R^N$        \\
+			Loss Function       & $L \from \Theta \to \R$                \\
+			Network Constructor & $\mathrm{NN} \from \Theta \to \cY^\cX$ \\
+			Cost Function       & $c \from \cY \times \cY \to \R$        \\
+			Regularizer         & $r \from \Theta \to \R$
+		\end{tabular}
+	\end{center}
+	\caption{\textbf{Definitions of Terms and Symbols}.}
+	\tablelabel{loss-notation}
+\end{table}
+
+The process of \enquote{training} a neural network is the process
+of selecting a value of the parameters, $\theta^\star$, that minimizes the loss:
+
+\begin{equation}\equationlabel{minimize}
+	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta)
+\end{equation}
+
+Almost all methods for training neural networks
+are \emph{gradient-based}.
+That is, they use the gradient function,
+which satisfies the following relation:
 
 \begin{align}
 	&\nabla{L}\from \Theta \to \Theta\\
-	&L(\theta + \eps) = L(\theta) + \grad{L}{\theta}^\top\eps + o(\eps)
+	&L(\theta + \eps) = L(\theta) + \langle\grad{L}{\theta},\eps\rangle + o(\eps)\equationlabel{grad-def}
 \end{align}
 
-\begin{align}
-	&\nabla^2{L}\from \Theta \to \R^{N\times N}\\
-	&\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)
-\end{align}
+The gradient at a point $\theta$ is a vector that can be used
+as a linear functional applied to a perturbation $\eps$ that approximates
+the value of $L$ at $\theta + \eps$.
+If we drop the little-$o$ term,
+we obtain this linear approximation,
+also known as a first-order Taylor expansion:
 
 \begin{align}
-	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta)\equationlabel{erm}
+	&\hat{L}(\theta + \eps) = L(\theta) + \langle\grad{L}{\theta},\eps\rangle
 \end{align}
+
+Minimizing $\hat{L}$ would mean selecting an infinitely-long step $\eps$
+direction with negative inner product with the gradient.
+But our goal is to minimize $L$, not $\hat{L}$,
+and as $\eps$ grows, so does the approximation error $o(\eps)$,
+and so we select a finite length vector.
+We choose one that minimizes that inner product for its length,
+the negative gradient,
+and then typically apply a scaling factor $\eta$,
+called the \emph{learning rate}.
+The resulting optimization method,
+defined in \algoref{gd},
+is known as \emph{gradient descent}.
+\\\\
+\begin{algorithm}[H]
+	\SetAlgoLined{}
+	\textbf{Given} $\theta_0\in\Theta, \eta\in\R^+, \nabla{L}\from\Theta\to\Theta, T\in\N^+$\\
+	\While{$t < T$}{$\theta_{t+1} \leftarrow \theta_t - \eta\grad{L}{\theta_t}$\\}
+	\algolabel{gd}
+	\caption{Gradient Descent}
+\end{algorithm}
+\ \\
+This method,
+and its stochastic and accelerated variants,
+has some hope of working on smooth functions because
+whenever the parameter is a minimizer,
+the gradient
+is $0$:
+
+\begin{equation}
+	\theta \in \argmin_{\theta \in \Theta} L(\theta) \Rightarrow \grad{L}{\theta} = 0
+\end{equation}
+and so, if initialized from a minimizer,
+any gradient-based algorithm will stay there.
+
+It is easy to demonstrate that for
+convex\footnote{A smooth function $f$ is convex iff
+$f(y) \geq f(x) + \grad{f}{x}(y - x)$.}
+smooth functions,
+this algorithm, for an appropriate choice of $\eta$,
+will converge to a minimizer
+(see, e.g.,~\cite{boyd2004}).
+
+Unfortunately,
+neural network loss surfaces are not convex,
+and so the theory built up around convex optimization
+(\cite{bubeck,boyd2004})
+would suggest that training neural networks should be hard.
+And indeed, the experience of practitioners
+working on neural networks in the 80s and 90s
+was that training them was difficult.
+Nowadays, however,
+it is recognized that training large neural networks
+with gradient-based methods
+is actually quite easy~\cite{sun2019}.
+One key hypothesis is the
+no-bad-local-minima theory.
+To understand it,
+we need to consider the kinds of structures
+that can appear in a non-convex function,
+and which are compatible with gradient-based optimization.
 
 \section{Critical Points}\sectionlabel{cp}
 
@@ -169,6 +285,11 @@ and lay out the major algorithms for critical point finding.
 	\Theta_{\textrm{cp}} &\defeq \Set{\theta \in \Theta \suchthat \grad{L}{\theta} = 0}\\
 	\Theta_{\textrm{cp}} &= \argmin_{\theta \in \Theta} \sgn{L}{\theta}\\
 	\Theta^\eps_{\textrm{cp}} &\defeq \Set{\theta \in \Theta \suchthat \grad{L}{\theta} \leq \eps}\\
+\end{align}
+
+\begin{align}
+	&\nabla^2{L}\from \Theta \to \R^{N\times N}\\
+	&\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)
 \end{align}
 
 \section{Critical Point-Finding Algorithms}\sectionlabel{cpfa}
