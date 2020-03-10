@@ -234,7 +234,7 @@ is known as \emph{gradient descent}.
 \begin{algorithm}[H]
 	\SetAlgoLined{}
 	\textbf{Given} $\theta_0\in\Theta, \eta\in\R^+, \nabla{L}\from\Theta\to\Theta, T\in\N^+$\\
-	\While{$t < T$}{$\theta_{t+1} \leftarrow \theta_t - \eta\grad{L}{\theta_t}$\\}
+	\While{$t < T$}{$\theta_{t+1} \leftarrow \theta_t - \eta\grad{L}{\theta_t}\\t \leftarrow t+1$\\}
 	\algolabel{gd}
 	\caption{Gradient Descent}
 \end{algorithm}
