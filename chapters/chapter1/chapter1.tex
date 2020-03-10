@@ -2,7 +2,7 @@
 
 \begin{document}
 
-\chapter{Neural Networks, Critical Points, and Critical Point-Finding Algorithms}\chapterlabel{one}
+\chapter{Neural Networks, Critical Points, and the No-Bad-Local-Minima Theory}\chapterlabel{one}
 
 \section{Overview}\sectionlabel{overview}
 
@@ -45,7 +45,7 @@ Our intent was to build on the work
 of~\cite{dauphin2014} and~\cite{pennington2017},
 who had reported a characterization of critical points in
 some small, simple neural networks.
-We hoped to increase the scale of the networks to something
+We hoped to increase the scale of the networks
 closer to what is used in practice,
 to try more types of neural networks,
 and especially to examine the role of the dataset.
@@ -54,7 +54,7 @@ The first step in characterizing the critical points is finding them.
 In general, they can't be derived or written in elementary mathematical terms,
 and so need to be discovered numerically,
 just as highly-performant neural networks have their parameters set
-by numerical algorithms rather than by analyutical derivations.
+by numerical algorithms rather than by analytical derivations.
 Our early attempts to reproduce the results
 in~\cite{dauphin2014} and~\cite{pennington2017}
 appeared to be failures.
@@ -65,7 +65,7 @@ stubbornly refused to decrease.
 The algorithms used to find critical points are complicated ---
 both in terms of their implementation and in terms of the number of knobs
 to twiddle to configure them, or \emph{hyperparameters} ---
-and they behave quite differently from typical machine learning algorithms,
+and they behave quite differently from typical machine learning algorithms.
 We had implemented these algorithms ourselves,
 due to the absence, at the beginning of this research project,
 of important technical tools in typical neural network software packages.
@@ -129,10 +129,12 @@ Neural networks are a highly flexible class of
 differentiable functions
 suitable to a wide variety of
 machine learning tasks~\cite{lecun2015}.
-Neural networks are constructed by interleaving
+\emph{Neural networks} are constructed by interleaving
 parameterized linear transformations
 with (optionally parameterized) non-linear transformations.
-The parameters are stored in a vector, $\theta$,
+In order to be able to apply calculus
+to our networks, we will assume that
+the parameters are stored in a vector, $\theta$,
 and converted into a function by a network constructor $\mathrm{NN}$:
 
 \begin{equation}
@@ -161,17 +163,16 @@ that is added to the cost.
 The result is called the \emph{loss function}
 and is defined below.
 
-\begin{equation}\equationlabel{loss-def}
+\begin{equation}\equationlabel{def-loss}
 	L(\theta) \defeq \frac{1}{n}\sum_{x_i, y_i \in X, Y} c(\mathrm{NN}(\theta)(x_i), y_i) + r(\theta)
 \end{equation}
 
 Note that,
 because the parameters are the thing over which we have control,
 we think of this as a function of the parameters $\theta$,
-even though it incorporates the network architecture,
-through $\mathrm{NN}$,
-and the input and output data.
-This notation is summarized in \tableref{loss-notation}.
+even though it might more properly be considered
+a function of the network architecture and the data as well.
+This notation and setup is summarized in \tableref{loss-notation}.
 
 \begin{table}[h]
 	\begin{center}
@@ -186,7 +187,7 @@ This notation is summarized in \tableref{loss-notation}.
 			Regularizer         & $r \from \Theta \to \R$
 		\end{tabular}
 	\end{center}
-	\caption{\textbf{Definitions of Terms and Symbols}.}
+	\caption{\textbf{Definitions of Terms and Symbols for Neural Network Loss Functions}.}
 	\tablelabel{loss-notation}
 \end{table}
 
@@ -194,7 +195,7 @@ The process of \enquote{training} a neural network is the process
 of selecting a value of the parameters, $\theta^\star$, that minimizes the loss:
 
 \begin{equation}\equationlabel{minimize}
-	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta)
+	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta) = \Theta^\star
 \end{equation}
 
 Almost all methods for training neural networks
@@ -223,7 +224,7 @@ direction with negative inner product with the gradient.
 But our goal is to minimize $L$, not $\hat{L}$,
 and as $\eps$ grows, so does the approximation error $o(\eps)$,
 and so we select a finite length vector.
-We choose one that minimizes that inner product for its length,
+We choose the one that minimizes that inner product for its length,
 the negative gradient,
 and then typically apply a scaling factor $\eta$,
 called the \emph{learning rate}.
@@ -246,16 +247,14 @@ whenever the parameter is a minimizer,
 the gradient
 is $0$:
 
-\begin{equation}
+\begin{equation}\equationlabel{minimizers-critical}
 	\theta \in \argmin_{\theta \in \Theta} L(\theta) \Rightarrow \grad{L}{\theta} = 0
 \end{equation}
 and so, if initialized from a minimizer,
 any gradient-based algorithm will stay there.
 
 It is easy to demonstrate that for
-convex\footnote{A smooth function $f$ is convex iff
-$f(y) \geq f(x) + \grad{f}{x}(y - x)$.}
-smooth functions,
+convex smooth functions,
 this algorithm, for an appropriate choice of $\eta$,
 will converge to a minimizer
 (see, e.g.,~\cite{boyd2004}).
@@ -272,46 +271,199 @@ Nowadays, however,
 it is recognized that training large neural networks
 with gradient-based methods
 is actually quite easy~\cite{sun2019}.
-One key hypothesis is the
+One key hypothesis as to why is the
 no-bad-local-minima theory.
 To understand it,
 we need to consider the kinds of structures
 that can appear in a non-convex function,
-and which are compatible with gradient-based optimization.
+and which of them are compatible with gradient-based optimization.
 
 \section{Critical Points}\sectionlabel{cp}
 
+One approach to analyzing the behavior of optimization algorithms
+is to split the task of determining convergence
+into two steps:
+first, identify the points which are \emph{stationary},
+at which the update is $0$,
+and then determine which of those points are actual targets of convergence.
+We call the stationary points of the loss its \emph{critical points}.
+The set of all critical points of a function $L$
+on a domain $\Theta$ is defined as
+
+\begin{equation}\equationlabel{def-thetacp}
+	\Theta^L_{\cp} \defeq \Set{\theta \in \Theta \suchthat \grad{L}{\theta} = 0}
+\end{equation}
+
+When unambiguous, the super-script $L$ will be omitted.
+In a na{\"\i}ve first pass,
+it would seem that all $\theta \in \Theta_{\cp}$
+are also targets of convergence.
+If we initialize \algoref{gd} to one of these points
+($\theta_{0} \in \Theta_{\cp}$),
+then for $\theta_t = \theta_0$ for all $t$.
+
+This picture is mis-leading for practical purposes,
+but even this simple approach is sufficient to guarantee
+that gradient-based methods converge on smooth convex functions.
+A smooth function $f$ is convex iff
+$f(y) \geq f(x) + \langle\grad{f}{x}(y - x)\rangle$
+for all $x$ and $y$ in its domain $\Omega$.
+Applying this definition of convexity at a point $x_{\cp}$
+among the stationary points of $f$, $\Omega^f_{\cp}$,
+we have that
+
 \begin{align}
-	\Theta_{\textrm{cp}} &\defeq \Set{\theta \in \Theta \suchthat \grad{L}{\theta} = 0}\\
-	\Theta_{\textrm{cp}} &= \argmin_{\theta \in \Theta} \sgn{L}{\theta}\\
-	\Theta^\eps_{\textrm{cp}} &\defeq \Set{\theta \in \Theta \suchthat \grad{L}{\theta} \leq \eps}\\
+	f(y) &\geq f\left(x_{\cp}\right) + \langle\grad{f}{x_{\cp}}, y - x_{\cp} \rangle\\
+	f(y) &\geq f\left(x_{\cp}\right) + 0 = f\left(x_{\cp}\right)
 \end{align}
+
+for \emph{any} point $y$.
+This is part of the power of convexity:
+local information (encoded in the gradient)
+gives global information (in the form of a global lower bound).
+With it, we can improve~\ref{eq:minimizers-critical}
+from a one-way implication to a biconditional,
+from \enquote{if-then} to
+\enquote{if and only if}:
+
+\begin{equation}\equationlabel{convexity-critical}
+	L \text{\ smooth, convex\ } \Rightarrow
+	\theta \in \argmin_{\theta \in \Theta} L(\theta) \Leftrightarrow \grad{L}{\theta} = 0 \Leftrightarrow \theta \in \Theta_{\cp}
+\end{equation}
+
+Another way to characterize smooth convex functions is through their Hessian function.
+The Hessian function returns matrices that satisfy the relation below:
 
 \begin{align}
 	&\nabla^2{L}\from \Theta \to \R^{N\times N}\\
-	&\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)
+	&\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)\equationlabel{def-hess}
 \end{align}
 
-\section{Critical Point-Finding Algorithms}\sectionlabel{cpfa}
-We'll often worry about the norm of a vector,
-$\normt{\vec{x}}$.
-Recall that the norm, which is a map
-$\normt{\cdot} \from \R^n \to \R$,
-is defined via
-\[
-	\snormt{\vec{x}} \defeq \trspvec{x}\vec{x}
-\]
-When unambiguous, we will simply write $\norm{\vec{x}}$
-and $\snorm{\vec{x}}$.
+It is the \enquote{gradient of the gradient},
+in that it returns a linear function (a matrix)
+that approximates the gradient function,
+which itself returns a linear functional (a vector)
+that approximates the original function.
+Combined, the gradient function and the Hessian function produce a quadratic approximation
+of the original function $L$:
 
-The linear subspace a matrix $M$ maps to $\vec{0}$
-is denoted by $\ker{M}$,
-and its orthogonal complement by $\co{\ker{M}}$.
+\begin{equation}
+	L\left(\theta + \eps\right) =
+	L(\theta)
+	+ \langle\grad{L}{\theta},\eps\rangle
+	+ \eps^\top\hess{L}{\theta}\eps + o(\snormt{\eps})\equationlabel{taylor-two}
+\end{equation}
 
-This will be important whenever
-$\grad{f}{\theta} \in \ker\hess{f}{\theta}$,
-and
-$\sgn{f}{\theta} > 0$.
+Note that the Hessian appears in~\equationref{taylor-two}
+as a quadratic form:
+a symmetric matrix pre- and post-multiplied with the same vector.
+Quadratic forms are classified,
+up to a change of basis, by the eigenvalue spectrum
+of the underlying matrix:
+the number of positive, negative, and 0 eigenvalues.
+
+Smooth convex functions are precisely those functions whose
+Hessian matrix has no negative eigenvalues at any
+point.
+Such a matrix $M$ is called \emph{positive semi-definite},
+often denoted $M \succeq 0$,
+where the partial order $\succ$ is defined by
+comparing smallest eigenvalues.
+If $M \succ 0$, then its smallest eigenvalue is positive,
+and the matrix is \emph{positive definite}.
+
+If the Hessian $M$ at a point is positive definite
+then $x^\top M x$ is always positive.
+This implies that the second-order term in~\equationref{taylor-two}
+is positive.
+Since the second-order term dominates the higher-order terms
+for sufficiently small $\eps$,
+at a point $\theta^*$ where the gradient is $0$
+and the Hessian is positive definite,
+we have that
+
+\begin{align}
+	L\left(\theta^* + \eps\right) &=
+	L(\theta^*)
+	+ \langle\grad{L}{\theta^*},\eps\rangle
+	+ \eps^\top\hess{L}{\theta^*}\eps + o(\snormt{\eps})\\
+	&=
+	L(\theta^*)
+	+ 0
+	+ \eps^\top\hess{L}{\theta^*}\eps + o(\snormt{\eps})\\
+	&\geq
+	L(\theta^*)
+\end{align}
+
+Such a $\theta^*$ is a called a \emph{local minimum},
+since it is the minimizer of $L$ in its (sufficently small) neighborhoods.
+We call the set of all such $\theta^*$
+the \emph{local minima}, $\Theta_{\lm}$.
+By a small extension of the above
+argument\footnote{To demonstrate that
+for convex functions,
+points with positive semi-definite Hessians
+are still minimizers.
+This is untrue in the non-convex case,
+and checking minima status becomes NP-Hard in the worst case,
+see~\cite{murty1987}.},
+we come to a final characterization
+of why gradient descent converges on smooth, convex
+functions\footnote{In fact
+the class of functions for which the implication~\ref{eq:cvx-minimizers}
+holds is broader.
+They are known as smooth \emph{invex} functions,
+see~\cite{invex2008}.}:
+all critical points are local minima
+and all local minima are also \emph{global minima},
+or elements of the $\argmin$:
+
+\begin{equation}\equationlabel{cvx-minimizers}
+	f \text{\ smooth, convex\ }
+	\Rightarrow \Omega_{\lm} = \argmin_{\Omega} f = \Omega_{\cp}
+\end{equation}
+
+From this, we can deduce
+that any algorithm that converges to a generic critical point will converge,
+on smooth convex functions, to a minimizer.
+
+This condition is sufficient, but not necessary,
+for gradient descent to converge to a local minimizer.
+The sticking point is when there are
+critical points which are not local minimizers:
+$\Theta_{\cp} \supset \Theta_{\lm}$.
+Does gradient descent converge to non-minimizing critical points,
+or only to local minimizers?
+
+As above, we can classify critical points according to the
+eigenvalue spectrum of their associated Hessian.
+The fraction of negative eigenvalues is known as the
+\emph{index} of the critical point.
+Points with non-zero index are \emph{strict saddle points}.
+If all eigenvalues are non-zero,
+then critical points with index $0$ are local minima
+and critical points with index $1$ are local maxima.
+If some eigenvalues are zero and the index is $0$,
+then the critical point may be a local minimum
+or may be a (non-strict) saddle point,
+but higher-order derivatives are needed to disambiguate.
+
+If all saddle points are strict saddle points,
+a condition known as the \emph{strict saddle property},
+then gradient descent converges to a local minimizer~\cite{lee2016}.
+Furthermore, convergence for a stochastic
+version of~\algoref{gd} is fast~\cite{jin2018a}
+and can be accelerated via momentum~\cite{jin2018b}.
+
+\section{The No-Bad-Local-Minima Theory}\sectionlabel{nblm}
+
+If all local minimizers are global minimizers
+and the strict saddle property holds,
+then the preceding argument implies that
+gradient descent, \algoref{gd},
+is sufficient to obtain global minima.
+This covers many cases~\cite{stufffromlee2016}.
+But does this cover neural network losses?
 
 \onlyinsubfile{\printbibliography}
 
