@@ -2,8 +2,15 @@
 
 \begin{document}
 
-\chapter{Neural Networks, Critical Points, and the No-Bad-Local-Minima Theory}\chapterlabel{one}
-
+\chapter{Critical Points and The No-Bad-Local-Minima Theory of Neural Network Losses}\chapterlabel{one}
+% \onlyinsubfile{\addcontentsline{toc}{chapter}{List of Algorithms}}
+\onlyinsubfile{\begin{KeepFromToc}
+		\tableofcontents
+		\clearpage
+		\listoffigures
+		\listoftables
+	\end{KeepFromToc}}
+\onlyinsubfile{\clearpage}
 \section{Overview}\sectionlabel{overview}
 
 It is typical to present only the polished final
@@ -123,7 +130,7 @@ I will set up the problem of training neural networks,
 describe the critical point-based perspective on it,
 and lay out the major algorithms for critical point finding.
 
-\section{Neural Networks}\sectionlabel{nnls}
+\section{Neural Networks Losses}\sectionlabel{nnls}
 
 Neural networks are a highly flexible class of
 differentiable functions
