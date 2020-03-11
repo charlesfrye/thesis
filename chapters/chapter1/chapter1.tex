@@ -1,8 +1,7 @@
 \documentclass[../../thesis.tex]{subfiles}
-
 \begin{document}
 
-\chapter{Critical Points and The No-Bad-Local-Minima Theory of Neural Network Losses}\chapterlabel{one}
+\chapter{Critical Points and the No-Bad-Local-Minima Theory of Neural Network Losses}\chapterlabel{one}
 % \onlyinsubfile{\addcontentsline{toc}{chapter}{List of Algorithms}}
 \onlyinsubfile{\begin{KeepFromToc}
 		\tableofcontents
@@ -11,6 +10,7 @@
 		\listoftables
 	\end{KeepFromToc}}
 \onlyinsubfile{\clearpage}
+
 \section{Overview}\sectionlabel{overview}
 
 It is typical to present only the polished final
@@ -327,6 +327,20 @@ The loss functions for linear regression and
 logistic regression are convex,
 including when convex regularization is applied,
 e.g.~LASSO or ridge~\cite{hastie2016}.
+See~\figureref{convex-vs-nonconvex}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=\textwidth]{img/chapter1/convex_vs_nonconvex.pdf}
+	\caption{\textbf{The Critical Points and Global Minima
+	of a Convex and a Non-Convex Function}}{\textbf{A}:
+	The convex function $L(\theta) = \theta^2$ (blue) and its critical points (gold)
+	and minimizers (gray outline).
+	\textbf{B}:
+	Same as in \emph{A}, but for the non-convex function
+	$L(\theta) = \cos(\theta) + \theta +\theta^2$.}
+	\figurelabel{convex-vs-nonconvex}
+\end{figure}
 
 Applying this definition of convexity at a point $x_{\cp}$
 among the stationary points of $f$, $\Omega^f_{\cp}$,
@@ -512,9 +526,9 @@ Finally, we will close, in \sectionref{counter},
 with theoretical results for actual neural networks,
 which are mostly negative.
 
-\subsection{The Gaussian Random Field Model of Neural Network Losses}\sectionlabel{sec:grf}
-\subsection{Improving the Gaussian Random Field Model with Wishart Matrices}\sectionlabel{sec:wishart}
-\subsection{Counterexamples to the No-Bad-Local-Minima Theory and Alternatives}\sectionlabel{sec:counter}
+\subsection{The Gaussian Random Field Model of Neural Network Losses}\sectionlabel{grf}
+\subsection{Improving the Gaussian Random Field Model with Wishart Matrices}\sectionlabel{wishart}
+\subsection{Counterexamples to the No-Bad-Local-Minima Theory and Alternatives}\sectionlabel{counter}
 
 \onlyinsubfile{\printbibliography}
 
