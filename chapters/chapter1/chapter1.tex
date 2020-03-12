@@ -130,7 +130,7 @@ I will set up the problem of training neural networks,
 describe the critical point-based perspective on it,
 and lay out the major algorithms for critical point finding.
 
-\section{Neural Networks Losses}\sectionlabel{nnls}
+\section{Neural Network Losses}\sectionlabel{nnls}
 
 Neural networks are a highly flexible class of
 differentiable functions
@@ -330,12 +330,14 @@ e.g.~LASSO or ridge~\cite{hastie2016}.
 See~\figureref{convex-vs-nonconvex}.
 
 \begin{figure}[ht]
-	\centering
-	\includegraphics[width=\textwidth]{img/chapter1/convex_vs_nonconvex.pdf}
+	\begin{center}
+		\includegraphics[width=\textwidth]{img/chapter1/convex-vs-nonconvex.pdf}
+	\end{center}
 	\caption{\textbf{The Critical Points and Global Minima
 	of a Convex and a Non-Convex Function}}{\textbf{A}:
-	The convex function $L(\theta) = \theta^2$ (blue) and its critical points (gold)
-	and minimizers (gray outline).
+	The convex function $L(\theta) = \theta^2$ (black)
+	and its critical points (blue)
+	and minimizers (gold outline).
 	\textbf{B}:
 	Same as in \emph{A}, but for the non-convex function
 	$L(\theta) = \cos(\theta) + \theta +\theta^2$.}
@@ -488,20 +490,54 @@ Furthermore, convergence for a stochastic
 version of~\algoref{gd} is fast~\cite{jin2018a}
 and can be accelerated via momentum~\cite{jin2018b}.
 
-If all local minimizers are global minimizers
-and the strict saddle property holds,
-then the preceding argument implies that
-gradient descent
-is sufficient to obtain global minima.
-This covers many cases:
-most critically, tensor decomposition,
+As an illustrative example, consider the loss function
+of two variables defined below:
+\begin{equation}\equationlabel{nblm-example}
+	L\left(\theta_1, \theta_2\right) = {\left(\theta_2\theta_1 - 1\right)}^2
+\end{equation}
+It corresponds to the choice of a mean squared error cost function
+for a neural network with two weight matrices of size 1
+and whose targets are equal to its inputs
+(i.e., the network is an auto-encoding network).
+This loss function is visualized in
+\figureref{nblm-example}.
+Though the function is not convex,
+because the gradient at some points, e.g., the origin,
+where it is the zero vector,
+does not provide a global lower bound,
+this function can still be optimized effectively with
+gradient-based methods.
+
+\begin{figure}
+	\begin{center}
+		\includegraphics[width=\linewidth]{img/chapter1/nblm-example.pdf}
+	\end{center}
+	\caption{\textbf{A Loss Function that Satisfies the Strict Saddle Property}.}{Values
+	of the function defined in \equationref{nblm-example}
+	on a domain centered at the origin (gray),
+	critical points in blue, and global minima in gold.
+	Contours are colored in log-space for illustrative purposes.}
+	\figurelabel{nblm-example}
+\end{figure}
+
+This example is artificial---
+it is using machine learning to multiply by 1
+--but it is closely related to principal components analysis.
+More generally, the strict-saddle property is
+satisfied by tensor decomposition problems~\cite{ge2015},
 which covers a number of latent variable models, including
-PCA, ICA~\cite{bell1997,comon2009},
+PCA,
+independent components analysis (ICA~\cite{bell1997,comon2009}),
 sparse coding~\cite{olshausen1996}
 and other forms of dictionary learning,
 and Hidden Markov models~\cite{anandkumar2012}.
-See~\cite{ge2015}.
-But does this cover neural network losses?
+
+In many of these cases,
+all local minima are also global minima,
+and so gradient descent is sufficient for
+those optimization problems.
+The question of whether this holds for neural network loss functions
+is the subject of the next section.
 
 \section{The No-Bad-Local-Minima Theory}\sectionlabel{nblm}
 
@@ -522,13 +558,14 @@ Then, in \sectionref{wishart},
 we will explain how this model was improved
 by incorporating observations about the spectrum
 of the Hessians of neural networks~\cite{pennington2017}.
-Finally, we will close, in \sectionref{counter},
-with theoretical results for actual neural networks,
-which are mostly negative.
+Then, we will discuss, in \sectionref{critic},
+weaknesses of and negative analytical results for the NBLM theory,
+and close with a review of the alternatives (\sectionref{alternate}).
 
 \subsection{The Gaussian Random Field Model of Neural Network Losses}\sectionlabel{grf}
 \subsection{Improving the Gaussian Random Field Model with Wishart Matrices}\sectionlabel{wishart}
-\subsection{Counterexamples to the No-Bad-Local-Minima Theory and Alternatives}\sectionlabel{counter}
+\subsection{Criticism of the No-Bad-Local-Minima Theory}\sectionlabel{critic}
+\subsection{Alternatives to the No-Bad-Local-Minima Theory}\sectionlabel{alternate}
 
 \onlyinsubfile{\printbibliography}
 
