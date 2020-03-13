@@ -507,6 +507,23 @@ As above, we can classify critical points according to the
 eigenvalue spectrum of their associated Hessian.
 The fraction of negative eigenvalues is known as the
 \emph{index} of the critical point.
+
+\begin{definition}{Index}{index}
+	For a critical point $\theta\in\Theta^L_{\cp}$,
+	we define the \emph{index}
+	as the number of negative eigenvalues
+	ofn the hessian of $L$ at $\theta$:
+	\begin{equation}\equationlabel{def-index}
+		I(\theta) = \frac{1}{N}
+		\sum_{\lambda_i \in \Lambda\left(\hess{L}{\theta}\right)}%
+		{\Ind\left(\lambda_i < 0\right)}
+	\end{equation}
+	where $\Lambda\from S\R^{k\times k}\to\R^k$
+	is a function that takes in a symmetric real matrix
+	and returns its eigenvalues as a vector
+	and $\Ind$ is the indicator function.
+\end{definition}
+
 Points with non-zero index are \emph{strict saddle points}.
 If all eigenvalues are non-zero,
 then critical points with index $0$ are local minima
@@ -534,13 +551,13 @@ and can be accelerated via momentum~\cite{jin2018b}.
 	\begin{equation}\equationlabel{nblm-example}
 		L\left(\theta_1, \theta_2\right) = {\left(\theta_2\theta_1 - 1\right)}^2
 	\end{equation}
-	In more standard, loose terminology,
+	In more standard terminology,
 	it corresponds to the choice of
 	the mean squared error cost function
 	and no regularization
 	for a linear autoencoder network
 	with one dimensional inputs.
-
+	\\ \ \\
 	The function is not convex,
 	because the gradient
 	does not provide a global lower bound
@@ -562,7 +579,7 @@ and can be accelerated via momentum~\cite{jin2018b}.
 	 on a domain centered at the origin.
 	 The value of $L$ is represented by color,
 	 with low values in black and high values in white.
-	 Contours are colored in log-space for illustrative purposes.
+	 Contours are logarithmically-spaced for illustrative purposes.
 	 Critical points in blue, and global minima in gold.}
 	\figurelabel{nblm-example}
 \end{example}
@@ -600,6 +617,9 @@ are approximately global minima,
 we will say that the function has the
 \emph{no-bad-local-minima property},
 or the NBLM property.
+While~\examplref{1ddlae} has the NBLM property,
+the function in panel B of~\figref{convex-vs-nonconvex}
+does not, due to the presence of a non-global local minimum.
 We will refer to the hypothesis that
 the loss functions of large neural networks
 satisfy the NBLM property as the
@@ -639,7 +659,7 @@ that have the NBLM property is the class of
 Gaussian random fields are random functions
 from $\R^n$ to $\R$.
 An example of a Gaussian random field defined on $\R^2$
-appears in~\figureref{grf-eg}.
+appears in~\figureref{2dgrf}.
 
 With most random variables,
 discussion can proceed directly from writing down a density.
@@ -678,19 +698,245 @@ There is one example of a Gaussian random field
 that is familiar to machine learning practitioners:
 the Gaussian process.
 
-\begin{example}{Gaussian Process}{gp}
+\begin{example}{Well-Known Gaussian Processes}{gp}
 	Choose $k = 1$ in the \defref{grf}.
 	This special case of a Gaussian random field
 	is called a \emph{Gaussian process}.
+	\\ \ \\
+	If $f(x_i)$ is independent of $f(x_j)$
+	for all $x_i, x_j \in \R$,
+	then $f$ is a
+	\emph{white noise Gaussian process}.
+	\\ \ \\
+	The cumulative integral of a white noise Gaussian process
+	is also a Gaussian process,
+	called a \emph{Wiener process} or a
+	\emph{random walk}.
+	\\ \ \\
+	Consider a single unit in a neural network with
+	independent, Gaussian random weights $\theta$.
+	The family of Gaussian random variables
+	is closed under linear combinations,
+	so the random variable $\theta^\top x$ is Gaussian for all $x$.
+	Such a neuron is therefore a Gaussian process.
+	With care, this can be extended into a model for
+	deep nonlinear neural networks with very large layers and
+	non-Gaussian random weights,
+	see~\cite{jacot2018}.
 
-	Talk about applications. Show a figure.
 \end{example}
 
-Talk about the Gaussian process model for neural networks.
+Usefully, a Gaussian random field can be defined in terms of its
+mean function
+$\mu\from\R^k\to\R$
+and covariance function, or kernel,
+$K\from\R^k\times\R^k\to\R^\k$.
+So long as the kernel $K$ falls off
+sufficiently quickly with the distance
+between its two arguments,
+the field is smooth
+(and its partial derivatives are also Gaussian random fields).
+See \exampleref{2dgrf} below.
+
+\begin{example}[float=hp]{2-Dimensional Gaussian Random Field}{2dgrf}
+
+	\begin{center}
+		\includegraphics[width=0.6\linewidth]{img/chapter1/2dgrf.pdf}
+	\end{center}
+	\captionof{figure}%
+	{\textbf{2-Dimensional Gaussian Random Field}}%
+	{}
+	\figurelabel{2dgrf}
+\end{example}
+
+The key work on the critical points of smooth Gaussian random fields
+is~\cite{bray2007}.
+Their core result showed
+that the expected index (\defref{index}) of critical points
+is a tight function of the field's value at that point
+(deviations of order $O(1/\sqrt{N})$,
+where $N$ is the dimension of the field).
+Furthermore, for many kernels,
+including the squared exponential, or Gaussian, kernel,
+the expected index is an increasing function of the loss,
+and the deviations are even smaller
+($O(1/N)$).
+
+As a consequence, if a high-dimensional loss function is a typical member of the
+this random field ensemble, then
+when the loss is high,
+the number of negative eigenvalues at critical points is high,
+and so the critical points are all saddles or maxima.
+Below a certain value of the loss,
+all of the critical points will be minima.
+Furthermore,
+the minima, including the global minima,
+will have approximately the same loss.
+
+This is an effective restatement
+of the no-bad-local-minima property.
+While it drops the requirement that all local minima are
+exact global minima,
+it retains their \enquote{effective} optimality,
+in that the local minima are \emph{almost} as good
+as the global minima.
+
+One benefit of this model is that it
+applies only to high-dimensional loss functions.
+This would explain the difference in optimizability
+of contemporary neural networks,
+where parameter counts ($\dim\left(\Theta\right)$)
+are in the hundreds of thousands or millions,
+and neural networks in the 80s and 90s,
+which were orders of magnitude smaller in size.
+
+The hypothesis that neural network loss surfaces
+might be well-modeled by typical members
+of the Gaussian random field ensemble
+was first put forward in~\cite{dauphin2014}.
+They reported numerical results on the critical points
+of two neural network losses that were in qualitative
+agreement with the effective NBLM property
+of Gaussian random fields.
+We will later see (\chapterref{three})
+that these results have a caveat to them,
+due to weaknesses of the numerical methods.
+Because~\cite{dauphin2014} predated,
+and to some extent inspired,
+results on the convergence of gradient descent
+in the presence of saddles~\cite{lee2016,jin2018a},
+it focused on defining an optimization method,
+saddle-free Newton,
+that was clearly repelled by saddles.
 
 \subsection{Improving the Gaussian Random Field Model with Wishart Matrices}\sectionlabel{wishart}
+
+In this section, we will see
+how the Gaussian random field model misses the mark
+in predicting the spectrum of neural network loss Hessians
+and develop a better model, following~\cite{pennington2017}.
+We begin by considering the random matrix ensembles
+from which the Hessians of the Gaussian random field model
+are drawn.
+For a fuller treatment of the theory of random matrices,
+including proofs of the statements below regarding spectra,
+see~\cite{tao2012}.
+
+The eigenvalues of random matrices enjoy a similar phenomenon
+to the law of large numbers for averages of random variables:
+when the right independence assumption is made,
+the details of the random variables don't matter,
+and the result converges to a deterministic limit.
+For averages of random variables,
+that deterministic limit is the expectation.
+For eigenvalues of random matrices,
+it is the Wigner semi-circle distribution.
+
+First, let's define the ensemble of random matrices
+associated with this distribution:
+the symmetric Wigner random matrices.
+\begin{definition}{Symmetric Wigner Random Matrix}{wigner}
+	A random square $n\times n$ matrix $M$ is \emph{symmetric Wigner}
+	if its independent entries $M_{ij}$ satisfy the following:
+	\begin{align*}
+		\forall i,j &\suchthat 1 \leq i < j < n\\
+			&\Ex{M_{i, j}} = 0\\
+			&\Ex{M_{i, j}^2} = 1/\sqrt{n}\\
+			&M_{j, i} = M_{i, j} \text{\ and\ } M_{i, j} \text{\ i.i.d}\\
+		\forall i\\
+			&\Ex{M_{i, i}} = \gamma\\
+			&\Ex{M_{i, i}^2} = 1/\sqrt{n}\\
+			&M_{i, i} \text{\ i.i.d}
+	\end{align*}
+	where i.i.d.~is short-hand for independent
+	and identically-distributed
+	and $\gamma \in \R$.
+	Note that the entries along the diagonal,
+	defined in the second block,
+	may have a different
+	distribution than the entries off the diagonal,
+	but both groups are i.i.d..
+\end{definition}
+
+A single draw from this ensemble is pictured
+in~\figureref{wigner-rm},
+along with its observed eigenvalue distribution
+and cumulative distribution.
+As the size of the matrix $n$ goes to $\infty$,
+the observed eigenvalue distribution converges,
+in the almost sure sense,
+to a Wigner semicircular distribution.
+
+\begin{figure}[ht]
+	\begin{center}
+		\includegraphics[width=\textwidth]{img/chapter1/wigner-rm.pdf}
+	\end{center}
+	\caption{\textbf{The Wigner Semicircular Distribution Does Not Match
+	the Spectrum of Neural Network Hessians}}{\textbf{A}:
+	\textbf{B}:}
+	\figurelabel{wigner-rm}
+\end{figure}
+
+\begin{definition}{Wigner Semicircular Distribution}{wigner-dist}
+	The ($\gamma$-shifted) \emph{Wigner semicircular distribution}
+	is the distribution associated with the density
+	$\nu \from \left[-2+\gamma, 2+\gamma\right] \to \R$,
+	defined as
+	\begin{equation}\equationlabel{def-wigner-dist}
+		\nu(x) = \frac{1}{2\pi}\sqrt{4 - {(x-\gamma)}^2}
+	\end{equation}
+	for $\gamma\in\R$.
+	When the shift parameter $\gamma$ is $0$,
+	we drop the prefix of \enquote{shifted}.
+\end{definition}
+This distribution is symmetric about the control parameter $\gamma$.
+For $\gamma=0$, this means that, for a large symmetric Wigner matrix
+approximately half of the eigenvalues will
+be negative and half of the values will be positive.
+As $\gamma$ changes, this control parameter shifts.
+
+We can now be a bit more specific about the results of~\cite{bray2007}.
+They found that the Hessian spectra of
+critical points of Gaussian random fields
+have $\gamma$-shifted Wigner semicircular distributions
+whose shift parameter $\gamma$ depends on the value of the random field.
+
+\begin{definition}{Kernel}{kernel}
+	For a matrix $M\inR^{m\times n}$,
+	we define the $\emph{kernel}$ of $M$,
+	denoted $\ker M$,
+	as the set of all vectors mapped to $0$ by $M$:
+	\begin{equation}\equationlabel{def-ker}
+		\ker M \defeq \Set{v \in \R^n \suchthat Mv = 0}
+	\end{equation}
+\end{definition}
+
+\begin{definition}{Cokernel}{cokernel}
+	For a matrix $M\inR^{m\times n}$,
+	we define the $\emph{co-kernel}$ of $M$,
+	denoted $\co\ker M$,
+	as the subspace spanned by all vectors not mapped to $0$ by $M$:
+	\begin{equation}\equationlabel{def-ker}
+		\co\ker M \defeq \Set{v \in \R^n \suchthat Mv \neq 0} \cup \Set{0}
+	\end{equation}
+	This subspace is the orthogonal complement of $\ker M$
+	(see \defref{kernel}).
+\end{definition}
+
+
 \subsection{Criticism of the No-Bad-Local-Minima Theory}\sectionlabel{critic}
 \subsection{Alternatives to the No-Bad-Local-Minima Theory}\sectionlabel{alternate}
+
+In \exampleref{gp}, it was noted that
+the functions computed by neural networks
+can be modeled by Gaussian random fields.
+Furthermore, from this point of view,
+wide neural networks approximately descend a convex loss function%
+~\cite{jacot2018}.
+If this approximation is good,
+then the no-bad-local-minima theory,
+even if true,
+is irrelevant.
 
 \onlyinsubfile{\printbibliography}
 
