@@ -158,7 +158,7 @@ than others, and this is enforced by a regularizer $r$
 that is added to the cost.
 The result is called the \emph{loss function}
 and is defined below.
-\begin{definition}[Loss Function]
+\begin{definition}{Loss Function}{loss}
 	Given a neural network constructor $\mathrm{NN}$,
 	a cost function $c$,
 	a regularizer $r$,
@@ -205,10 +205,10 @@ after applying each in turn:
 The process of \enquote{training} a neural network is the process
 of selecting a value of the parameters, $\theta^\star$, that minimizes the loss:
 \begin{equation}\equationlabel{minimize}
-	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta) \defeq \Theta^\star
+	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta) \defeq \Theta^L_{\star}
 \end{equation}
 That is, we treat the process of inferring the best parameters for our network,
-or programming our machine-learned algorithm,
+the process of programming our machine-learned algorithm,
 as an optimization problem.
 An element of an $\argmin$ is known as a \emph{global minimum}.
 Finding global minima is generically a hard problem in the strictest sense,
@@ -221,7 +221,7 @@ and even the universal construction approach in category theory~\cite{milewski20
 }.
 One might think of machine learning in general as
 a variational approach to programming computers.
-Whether optimization works,
+Whether optimization works
 depends on whether the optimization problem
 has a fast solution algorithm.
 
@@ -230,7 +230,7 @@ are \emph{gradient-based}.
 That is, they use the gradient function,
 which satisfies the following relation:
 
-\begin{definition}[Gradient Function]
+\begin{definition}{Gradient Function}{gradient}
 	The \emph{gradient function} of a function $L \from \Theta \to \R$
 	is denoted $\nabla{L} \from \Theta \to \Theta$
 	and satisfies
@@ -238,6 +238,8 @@ which satisfies the following relation:
 		&L(\theta + \eps) = L(\theta) + \langle\grad{L}{\theta},\eps\rangle + o(\eps)\equationlabel{grad-def}
 	\end{align}
 	for all $\theta, \eps \in \Theta$.
+	The values returned by this function are called \emph{gradients}
+	or \emph{gradient vectors}.
 \end{definition}
 
 The gradient at a point $\theta$ is a vector that can be used
@@ -267,7 +269,7 @@ is known as \emph{gradient descent}.
 \\\\
 \begin{algorithm}[H]
 	\SetAlgoLined{}
-	\textbf{Given} $\theta_0\in\Theta, \eta\in\R^+, \nabla{L}\from\Theta\to\Theta, T\in\N^+$\\
+	\textbf{Require} $\theta_0\in\Theta, \eta\in\R^+, \nabla{L}\from\Theta\to\Theta, T\in\N^+$\\
 	\While{$t < T$}{$\theta_{t+1} \leftarrow \theta_t - \eta\grad{L}{\theta_t}\\t \leftarrow t+1$\\}
 	\algolabel{gd}
 	\caption{Gradient Descent}
@@ -292,7 +294,7 @@ will converge to a minimizer.
 Unfortunately,
 neural network loss surfaces are not convex,
 and so the theory built up around convex optimization
-(\cite{bubeck2015,boyd2004})
+(see~\cite{bubeck2015,boyd2004})
 would suggest that training neural networks should be hard.
 And indeed, the experience of practitioners
 working on neural networks in the 80s and 90s
@@ -316,13 +318,16 @@ into two steps:
 first, identify the points which are \emph{stationary},
 at which the update is $0$,
 and then determine which of those points are actual targets of convergence.
-We call the stationary points of the loss its \emph{critical points}.
-The set of all critical points of a function $L$
-on a domain $\Theta$ is defined as
-\begin{equation}\equationlabel{def-thetacp}
-	\Theta^L_{\cp} \defeq \Set{\theta \in \Theta \suchthat \grad{L}{\theta} = 0}
-\end{equation}
-When unambiguous, the super-script $L$ will be omitted.
+We call the stationary points of the loss
+for the gradient descent algorithm its critical points.
+\begin{definition}{Critical Points}{critical}
+	The set of all \emph{critical points} of a loss function $L$
+	on a domain $\Theta$ is denoted $\Theta^L_{\cp}$ and defined as
+	\begin{equation}\equationlabel{def-thetacp}
+		\Theta^L_{\cp} \defeq \Set{\theta \in \Theta \suchthat \grad{L}{\theta} = 0}
+	\end{equation}
+	When unambiguous, the super-script $L$ will be omitted.
+\end{definition}
 In a na{\"\i}ve first pass,
 it would seem that all $\theta \in \Theta_{\cp}$
 are also targets of convergence.
@@ -358,13 +363,13 @@ See~\figureref{convex-vs-nonconvex}.
 \end{figure}
 
 Applying this definition of convexity at a point $x_{\cp}$
-among the stationary points of $f$, $\Omega^f_{\cp}$,
+among the critical points of $f$, $\Omega^f_{\cp}$,
 we have that
 \begin{align}
 	f(y) &\geq f\left(x_{\cp}\right) + \langle\grad{f}{x_{\cp}}, y - x_{\cp} \rangle\\
 	f(y) &\geq f\left(x_{\cp}\right) + 0 = f\left(x_{\cp}\right)
 \end{align}
-for \emph{any} point $y$.
+for \emph{any} point $y$,
 This is part of the power of convexity:
 local information (encoded in the gradient)
 gives global information (in the form of a global lower bound).
@@ -380,20 +385,27 @@ from \enquote{if-then} to
 
 Another way to characterize smooth convex functions is through their Hessian function.
 The Hessian function returns matrices that satisfy the relation below:
-
-\begin{align}
-	&\nabla^2{L}\from \Theta \to \R^{N\times N}\\
-	&\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)\equationlabel{def-hess}
-\end{align}
-
+\begin{definition}{Hessian Function}{hessian}
+	The \emph{Hessian function} of a function $L \from \Theta \to \R$
+	is a function $\nabla^2{L} \from \Theta \to \R^{N\times N}$,
+	where $N$ is the dimensionality of $\Theta$,
+	that satisfies
+	\begin{align}
+		&\nabla^2{L}\from \Theta \to \R^{N\times N}\\
+		&\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)\equationlabel{def-hess}
+	\end{align}
+	for all $\theta, \eps \in \Theta$.
+	The matrices returned by this function are called \emph{Hessians}
+	or \emph{Hessian matrices}.
+\end{definition}
 It is the \enquote{gradient of the gradient},
 in that it returns a linear function (a matrix)
 that approximates the gradient function,
 which itself returns a linear functional (a vector)
-that approximates the original function.
+that approximates the original scalar function.
+
 Combined, the gradient function and the Hessian function produce a quadratic approximation
 of the original function $L$:
-
 \begin{equation}
 	L\left(\theta + \eps\right) =
 	L(\theta)
@@ -445,8 +457,16 @@ we have that
 Such a $\theta^*$ is a called a \emph{local minimum},
 since it is the minimizer of $L$ in all its neighborhoods
 under a given size.
-We call the set of all such $\theta^*$
-the \emph{local minima}, $\Theta_{\lm}$.
+\begin{definition}{Local Minima}{lm}
+	The set of all \emph{local minima} of a scalar function $L$
+	on a domain $\Theta$ is denoted $\Theta^L_{\lm}$ and defined as
+	\begin{equation}\equationlabel{def-thetalm}
+		\Theta^L_{\lm} \defeq \Set{\theta \in \Theta \suchthat L(\theta + \eps) \geq \theta}
+	\end{equation}
+	for some $\eps > 0$.
+	When unambiguous, the super-script $L$ will be omitted.
+\end{definition}
+
 By a small extension of the above
 argument\footnote{The extension demonstrates that,
 for convex functions,
@@ -463,11 +483,11 @@ holds is broader.
 They are known as smooth \emph{invex} functions,
 see~\cite{invex2008}.}:
 all critical points are local minima
-and all local minima are also \emph{global minima},
-or elements of the $\argmin$:
+and all local minima are also global minima,
+i.e.~elements of the $\argmin$:
 
 \begin{equation}\equationlabel{cvx-minimizers}
-	f \text{\ smooth, convex\ }
+	f\from\Omega\to\R \text{\ smooth, convex\ }
 	\Rightarrow \Omega_{\lm} = \argmin_{\Omega} f = \Omega_{\cp}
 \end{equation}
 
@@ -503,40 +523,60 @@ Furthermore, convergence for a stochastic
 version of~\algoref{gd} is fast~\cite{jin2018a}
 and can be accelerated via momentum~\cite{jin2018b}.
 
-As an illustrative example, consider the loss function
-of two variables defined below:
-\begin{equation}\equationlabel{nblm-example}
-	L\left(\theta_1, \theta_2\right) = {\left(\theta_2\theta_1 - 1\right)}^2
-\end{equation}
-It corresponds to the choice of a mean squared error cost function
-for a neural network with two weight matrices of size 1
-and whose targets are equal to its inputs
-(i.e., the network is an auto-encoding network).
-This loss function is visualized in
-\figureref{nblm-example}.
-The function is not convex,
-because the gradient
-does not provide a global lower bound
-at some points, e.g., at the origin
-where it is the zero vector.
-However, this function can still be optimized effectively with
-gradient-based methods.
+\begin{example}[float=hp]{1-Dimensional Deep Linear Autoencoder}{1ddlae}
+	In \defref{loss}, take $X = Y = 1$,
+	$c(y, \hat{y}) = {\left(y - \hat{y}\right)}^2$,
+	$r(\theta) = 0$,
+	and
+	$\mathrm{NN}(\theta) = \theta_2\theta_1$
+	for $\Theta = \R^2$.
+	The resulting loss function $L$ is
+	\begin{equation}\equationlabel{nblm-example}
+		L\left(\theta_1, \theta_2\right) = {\left(\theta_2\theta_1 - 1\right)}^2
+	\end{equation}
+	In more standard, loose terminology,
+	it corresponds to the choice of
+	the mean squared error cost function
+	and no regularization
+	for a linear autoencoder network
+	with one dimensional inputs.
 
-\begin{figure}
+	The function is not convex,
+	because the gradient
+	does not provide a global lower bound
+	at some points, e.g., at the origin
+	where it is the zero vector.
+	The origin is a critical point
+	that is not a minimizer
+	(the loss takes on value $1 > 0$)
+	but instead a strict saddle point.
+	However, this function can still be optimized effectively with
+	gradient-based methods.
+
 	\begin{center}
-		\includegraphics[width=\linewidth]{img/chapter1/nblm-example.pdf}
+		\includegraphics[width=0.6\linewidth]{img/chapter1/nblm-example.pdf}
 	\end{center}
-	\caption{\textbf{A Loss Function that Satisfies the Strict Saddle Property}.}{Values
-	of the function defined in \equationref{nblm-example}
-	on a domain centered at the origin (gray),
-	critical points in blue, and global minima in gold.
-	Contours are colored in log-space for illustrative purposes.}
+	\captionof{figure}%
+	{\textbf{A Loss Function that Satisfies the Strict Saddle Property}.}%
+	{Values of the function defined in \exampleref{1ddlae}
+	 on a domain centered at the origin.
+	 The value of $L$ is represented by color,
+	 with low values in black and high values in white.
+	 Contours are colored in log-space for illustrative purposes.
+	 Critical points in blue, and global minima in gold.}
 	\figurelabel{nblm-example}
-\end{figure}
+\end{example}
 
-This example is artificial---
-it is using machine learning to multiply by 1
---but it is closely related to principal components analysis (PCA).
+This is a convenient property, but is it satisfied
+by any losses of practical interest?
+As an illustrative example, consider the quartic loss function
+of two variables, \exampleref{1ddlae} below,
+which is based on perhaps the simplest neural network.
+The example is artificial---
+it is using machine learning to multiply by 1,
+which is excessive even in the contemporary era of ML hype
+---but it is closely related to principal components analysis (PCA),
+as we will see in~\chapterref{two}.
 More generally, the strict-saddle property is
 satisfied by tensor decomposition problems~\cite{ge2015},
 which covers a number of latent variable models, including
@@ -593,7 +633,7 @@ and close with a review of the alternatives (\sectionref{alternate}).
 
 \subsection{The Gaussian Random Field Model of Neural Network Losses}\sectionlabel{grf}
 
-One of the simplest classes of random functions
+One of the simplest interesting classes of random functions
 that have the NBLM property is the class of
 \emph{Gaussian random fields}.
 Gaussian random fields are random functions
@@ -601,11 +641,52 @@ from $\R^n$ to $\R$.
 An example of a Gaussian random field defined on $\R^2$
 appears in~\figureref{grf-eg}.
 
-\begin{definition}[Multivariate Gaussian]
-	A random vector $v$ is \emph{multivariate Gaussian} if
+With most random variables,
+discussion can proceed directly from writing down a density.
+But with random functions,
+the situation is more complicated,
+because it is difficult to condsider densities and integrals over
+the space of functions.
+This necessitates a somewhat strange definition for the Gaussian random field.
+The definition is clearer if we first introduce an analogous definition
+for multivariate Gaussian random variables.
+
+\begin{definition}{Multivariate Gaussian}{mvg}
+	A random $k$-dimensional vector $v$ is \emph{multivariate Gaussian} if
 	the random variable $w^\top v$ is Gaussian-distributed
-	for all $w$.
+	for all $w\in\R^k$.
 \end{definition}
+As a corollary,
+the family of multivariate Gaussians is closed under all linear transformations,
+since the composition of a linear transformation and an inner product
+is equal to an inner product with another vector.
+
+We can similarly define a Gaussian random field
+by requiring that the vectors obtained by
+evaluating the random function at any set of test points
+have the same property.
+\begin{definition}{Gaussian Random Field}{grf}
+	A random function $f$ from $\R^k\to\R$ is a \emph{Gaussian random field}
+	if the random variable $w^\top f^{\otimes n}(x_1 \dots x_n)$
+	is Gaussian-distributed
+	for all $w\in\R^n, x_i \in\R^k$.
+\end{definition}
+Here $f^{\otimes n}$ is the $n$-fold product of the function $f$,
+which applies the function $f$ to $n$ separate inputs.
+
+There is one example of a Gaussian random field
+that is familiar to machine learning practitioners:
+the Gaussian process.
+
+\begin{example}{Gaussian Process}{gp}
+	Choose $k = 1$ in the \defref{grf}.
+	This special case of a Gaussian random field
+	is called a \emph{Gaussian process}.
+
+	Talk about applications. Show a figure.
+\end{example}
+
+Talk about the Gaussian process model for neural networks.
 
 \subsection{Improving the Gaussian Random Field Model with Wishart Matrices}\sectionlabel{wishart}
 \subsection{Criticism of the No-Bad-Local-Minima Theory}\sectionlabel{critic}
