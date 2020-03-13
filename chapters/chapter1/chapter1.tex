@@ -146,15 +146,6 @@ and converted into a function by a network constructor $\mathrm{NN}$:
 \begin{equation}
 	\mathrm{NN}(\theta) \from \cX \to \cY
 \end{equation}
-For example,
-a \emph{fully-connected network}
-has as its parameters a tuple of weight matrices $W_i$
-and applies a non-linear function $\sigma$
-after applying each in turn:
-
-\begin{equation}
-	\mathrm{NN}\left(W_1, \dots W_{k-1}, W_k\right) = W_k \sigma \circ W_{k-1} \sigma \circ \dots \sigma \circ W_1
-\end{equation}
 
 While neural networks can be used for any machine learning task,
 we will focus on the important special case of supervised learning.
@@ -167,15 +158,32 @@ than others, and this is enforced by a regularizer $r$
 that is added to the cost.
 The result is called the \emph{loss function}
 and is defined below.
-\begin{equation}\equationlabel{def-loss}
-	L(\theta) \defeq \frac{1}{n}\sum_{x_i, y_i \in X, Y} c(\mathrm{NN}(\theta)(x_i), y_i) + r(\theta)
-\end{equation}
+\begin{definition}[Loss Function]
+	Given a neural network constructor $\mathrm{NN}$,
+	a cost function $c$,
+	a regularizer $r$,
+	and input data $X$ and targets $Y$,
+	we define the \emph{loss function} as
+	\begin{equation}\equationlabel{def-loss}
+		L(\theta) \defeq \frac{1}{n}\sum_{x_i, y_i \in X, Y} c(\mathrm{NN}(\theta)(x_i), y_i) + r(\theta)
+	\end{equation}
+\end{definition}
+The notation for this setup is summarized in \tableref{loss-notation}.
 Note that,
 because the parameters are the thing over which we have control,
 we think of this as a function of the parameters $\theta$,
-even though it might more properly be considered
-a function of the network architecture and the data as well.
-This notation and setup is summarized in \tableref{loss-notation}.
+even though it might in other contexts be considered
+a function of the network architecture, the data, or both.
+
+For example,
+a \emph{fully-connected network}
+has as its parameters a tuple of weight matrices $W_i$
+and applies a non-linear function $\sigma$
+after applying each in turn:
+
+\begin{equation}
+	\mathrm{NN}\left(W_1, \dots W_{k-1}, W_k\right) = W_k \sigma \circ W_{k-1} \sigma \circ \dots \sigma \circ W_1
+\end{equation}
 
 \begin{table}[h]
 	\begin{center}
@@ -197,7 +205,7 @@ This notation and setup is summarized in \tableref{loss-notation}.
 The process of \enquote{training} a neural network is the process
 of selecting a value of the parameters, $\theta^\star$, that minimizes the loss:
 \begin{equation}\equationlabel{minimize}
-	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta) = \Theta^\star
+	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta) \defeq \Theta^\star
 \end{equation}
 That is, we treat the process of inferring the best parameters for our network,
 or programming our machine-learned algorithm,
@@ -222,10 +230,15 @@ are \emph{gradient-based}.
 That is, they use the gradient function,
 which satisfies the following relation:
 
-\begin{align}
-	&\nabla{L}\from \Theta \to \Theta\\
-	&L(\theta + \eps) = L(\theta) + \langle\grad{L}{\theta},\eps\rangle + o(\eps)\equationlabel{grad-def}
-\end{align}
+\begin{definition}[Gradient Function]
+	The \emph{gradient function} of a function $L \from \Theta \to \R$
+	is denoted $\nabla{L} \from \Theta \to \Theta$
+	and satisfies
+	\begin{align}
+		&L(\theta + \eps) = L(\theta) + \langle\grad{L}{\theta},\eps\rangle + o(\eps)\equationlabel{grad-def}
+	\end{align}
+	for all $\theta, \eps \in \Theta$.
+\end{definition}
 
 The gradient at a point $\theta$ is a vector that can be used
 as a linear functional applied to a perturbation $\eps$ that approximates
@@ -485,7 +498,7 @@ but higher-order derivatives are needed to disambiguate.
 
 If all saddle points are strict saddle points,
 a condition known as the \emph{strict saddle property},
-then gradient descent converges to a local minimizer~\cite{lee2016}.
+then gradient descent converges to a local minimizer~\cite{lee2016,lee2019}.
 Furthermore, convergence for a stochastic
 version of~\algoref{gd} is fast~\cite{jin2018a}
 and can be accelerated via momentum~\cite{jin2018b}.
@@ -501,11 +514,12 @@ and whose targets are equal to its inputs
 (i.e., the network is an auto-encoding network).
 This loss function is visualized in
 \figureref{nblm-example}.
-Though the function is not convex,
-because the gradient at some points, e.g., the origin,
-where it is the zero vector,
-does not provide a global lower bound,
-this function can still be optimized effectively with
+The function is not convex,
+because the gradient
+does not provide a global lower bound
+at some points, e.g., at the origin
+where it is the zero vector.
+However, this function can still be optimized effectively with
 gradient-based methods.
 
 \begin{figure}
@@ -522,7 +536,7 @@ gradient-based methods.
 
 This example is artificial---
 it is using machine learning to multiply by 1
---but it is closely related to principal components analysis.
+--but it is closely related to principal components analysis (PCA).
 More generally, the strict-saddle property is
 satisfied by tensor decomposition problems~\cite{ge2015},
 which covers a number of latent variable models, including
@@ -550,10 +564,25 @@ We will refer to the hypothesis that
 the loss functions of large neural networks
 satisfy the NBLM property as the
 \emph{no-bad-local-minima theory}.
+
+Informally, the argument goes as follows:
+at any critical point, imagine that the eigenvalues
+of the Hessian are drawn randomly.
+If there is even a small chance that any eigenvalue is negative,
+then for a sufficiently large network,
+there will be almost surely at least one negative eigenvalue,
+by the strong law of large numbers.
+When the value of the loss is low,
+we might expect that the probability of a positive eigenvalue becomes 1,
+while when the value of the loss is high,
+negative and positive values are both possible.
+A random function drawn according to these rules
+wil have the NBLM property.
+
 In \sectionref{grf},
 we will cover the first model of neural network loss functions
-meant to specifically capture the NBLM property,
-the Gaussian Random Field model of~\cite{dauphin2014}.
+meant to formalize this intuition,
+the Gaussian random field model of~\cite{dauphin2014}.
 Then, in \sectionref{wishart},
 we will explain how this model was improved
 by incorporating observations about the spectrum
@@ -563,6 +592,21 @@ weaknesses of and negative analytical results for the NBLM theory,
 and close with a review of the alternatives (\sectionref{alternate}).
 
 \subsection{The Gaussian Random Field Model of Neural Network Losses}\sectionlabel{grf}
+
+One of the simplest classes of random functions
+that have the NBLM property is the class of
+\emph{Gaussian random fields}.
+Gaussian random fields are random functions
+from $\R^n$ to $\R$.
+An example of a Gaussian random field defined on $\R^2$
+appears in~\figureref{grf-eg}.
+
+\begin{definition}[Multivariate Gaussian]
+	A random vector $v$ is \emph{multivariate Gaussian} if
+	the random variable $w^\top v$ is Gaussian-distributed
+	for all $w$.
+\end{definition}
+
 \subsection{Improving the Gaussian Random Field Model with Wishart Matrices}\sectionlabel{wishart}
 \subsection{Criticism of the No-Bad-Local-Minima Theory}\sectionlabel{critic}
 \subsection{Alternatives to the No-Bad-Local-Minima Theory}\sectionlabel{alternate}
