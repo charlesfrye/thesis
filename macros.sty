@@ -57,6 +57,12 @@
 \newcommand{\algolabel}[1]{\label{algo:#1}}
 \newcommand{\algoref}[1]{\hyperref[algo:#1]{Algorithm~\ref{algo:#1}}}
 
+% Theorems and Definitions
+\newtheorem{theorem}{Theorem}[section]
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+
 % Expectation, Probability, Variance
 \newcommand{\Esymb}{\mathbb{E}}
 \newcommand{\Psymb}{\mathbb{P}}
