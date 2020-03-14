@@ -736,18 +736,23 @@ sufficiently quickly with the distance
 between its two arguments,
 the field is smooth
 (and its partial derivatives are also Gaussian random fields).
-See \exampleref{2dgrf} below.
+See \figureref{2dgrf},
+which depicts a single draw from the ensemble of smooth
+Gaussian random fields with a squared exponential,
+or Gaussian kernel.
+Notice that it has local minima, saddles, and maxima.
+If we are to use this ensemble as a model of neural network losses
+that can explain their optimizability,
+we would like a statistical description of these critical points.
 
-\begin{example}[float=hp]{2-Dimensional Gaussian Random Field}{2dgrf}
-
+\begin{figure}[h]
 	\begin{center}
 		\includegraphics[width=0.6\linewidth]{img/chapter1/2dgrf.pdf}
 	\end{center}
-	\captionof{figure}%
-	{\textbf{2-Dimensional Gaussian Random Field}}%
-	{}
+	\caption%
+	{\textbf{2-Dimensional Gaussian Random Field}.}
 	\figurelabel{2dgrf}
-\end{example}
+\end{figure}
 
 The key work on the critical points of smooth Gaussian random fields
 is~\cite{bray2007}.
@@ -757,7 +762,7 @@ is a tight function of the field's value at that point
 (deviations of order $O(1/\sqrt{N})$,
 where $N$ is the dimension of the field).
 Furthermore, for many kernels,
-including the squared exponential, or Gaussian, kernel,
+including the squared exponential kernel,
 the expected index is an increasing function of the loss,
 and the deviations are even smaller
 ($O(1/N)$).
@@ -837,15 +842,15 @@ associated with this distribution:
 the symmetric Wigner random matrices.
 \begin{definition}{Symmetric Wigner Random Matrix}{wigner}
 	A random square $n\times n$ matrix $M$ is \emph{symmetric Wigner}
-	if its independent entries $M_{ij}$ satisfy the following:
+	if the random entries $M_{ij}$ satisfy the following:
 	\begin{align*}
-		\forall i,j &\suchthat 1 \leq i < j < n\\
+		\forall i,j &\suchthat 1 \leq i < j \leq n\\
 			&\Ex{M_{i, j}} = 0\\
-			&\Ex{M_{i, j}^2} = 1/\sqrt{n}\\
+			&\Ex{M_{i, j}^2} = 1/n\\
 			&M_{j, i} = M_{i, j} \text{\ and\ } M_{i, j} \text{\ i.i.d}\\
 		\forall i\\
 			&\Ex{M_{i, i}} = \gamma\\
-			&\Ex{M_{i, i}^2} = 1/\sqrt{n}\\
+			&\Ex{M_{i, i}^2} = 1/n\\
 			&M_{i, i} \text{\ i.i.d}
 	\end{align*}
 	where i.i.d.~is short-hand for independent
@@ -871,9 +876,18 @@ to a Wigner semicircular distribution.
 	\begin{center}
 		\includegraphics[width=\textwidth]{img/chapter1/wigner-rm.pdf}
 	\end{center}
-	\caption{\textbf{The Wigner Semicircular Distribution Does Not Match
-	the Spectrum of Neural Network Hessians}}{\textbf{A}:
-	\textbf{B}:}
+	\caption{\textbf{The Wigner Semicircular Distribution}.}%
+	{\textbf{A}: An example $50\times50$ symmetric Wigner random matrix drawn from the ensemble
+		in~\defref{wigner}. Entries are Gaussian-distributed.
+		More negative values in black, more positive values in white.
+	\textbf{B}: The expected spectral density of the matrix in \emph{A} (gold),
+		which is given by \equationref{def-wigner-dist},
+		and the histogram of observed eigenvalues (blue). Note the close match.
+	\textbf{C}: The expected cumulative spectral distribution
+		of the matrix in \emph{A} (gold), which is the integral of the
+		density in $\emph{B}$, and the cumulative fraction of observed eigenvalues (blue).
+		Again, the match is close even for a fairly small matrix.
+}
 	\figurelabel{wigner-rm}
 \end{figure}
 
@@ -893,15 +907,26 @@ This distribution is symmetric about the control parameter $\gamma$.
 For $\gamma=0$, this means that, for a large symmetric Wigner matrix
 approximately half of the eigenvalues will
 be negative and half of the values will be positive.
-As $\gamma$ changes, this control parameter shifts.
+As $\gamma$ changes, the fraction of eigenvalues above and below zero changes.
 
 We can now be a bit more specific about the results of~\cite{bray2007}.
 They found that the Hessian spectra of
 critical points of Gaussian random fields
 have $\gamma$-shifted Wigner semicircular distributions
 whose shift parameter $\gamma$ depends on the value of the random field.
+This gives an index that is similarly dependent.
 
-\begin{definition}{Kernel}{kernel}
+How well does this spectrum match up against the observed eigenvalues
+of neural network loss Hessians?
+Since the expected distribution is
+continuous with respect to the Lebesgue measure,
+i.e.~it has no atoms, or single points with finite probability mass.
+In particular, there is no atom at $0$,
+and so the random matrices almost surely have no exactly zero eigenvalues.
+This means that their kernel, defined below, consists only of the zero vector,
+and the matrices have inverses.
+
+\begin{definition}{Kernel, Co-Kernel, and Rank}{kernel}
 	For a matrix $M\inR^{m\times n}$,
 	we define the $\emph{kernel}$ of $M$,
 	denoted $\ker M$,
@@ -909,20 +934,28 @@ whose shift parameter $\gamma$ depends on the value of the random field.
 	\begin{equation}\equationlabel{def-ker}
 		\ker M \defeq \Set{v \in \R^n \suchthat Mv = 0}
 	\end{equation}
-\end{definition}
-
-\begin{definition}{Cokernel}{cokernel}
-	For a matrix $M\inR^{m\times n}$,
-	we define the $\emph{co-kernel}$ of $M$,
+	We define the $\emph{co-kernel}$ of $M$,
 	denoted $\co\ker M$,
 	as the subspace spanned by all vectors not mapped to $0$ by $M$:
-	\begin{equation}\equationlabel{def-ker}
+	\begin{equation}\equationlabel{def-coker}
 		\co\ker M \defeq \Set{v \in \R^n \suchthat Mv \neq 0} \cup \Set{0}
 	\end{equation}
-	This subspace is the orthogonal complement of $\ker M$
-	(see \defref{kernel}).
+	The \emph{rank} of $M$, $\rk M$,
+	is equal to the dimension of $\co\ker M$.
+	A square matrix with rank less than the maximum
+	is said to have \emph{low rank}.
 \end{definition}
 
+This is in stark contrast to the Hessian matrices
+of typical neural network loss functions.
+An example is shown in~\figureref{nn-hess}.
+There are many $0$ eigenvalues,
+along with some eigenvalues at much larger values,
+with fewer and lower magnitude negative eigenvalues.
+Furthermore, the low-rank structure of the Hessian matrix
+can be read off from the clear patterns in the values,
+unlike the clearly independent values
+in the matrix in~\figureref{wigner-rm}.
 
 \subsection{Criticism of the No-Bad-Local-Minima Theory}\sectionlabel{critic}
 \subsection{Alternatives to the No-Bad-Local-Minima Theory}\sectionlabel{alternate}
