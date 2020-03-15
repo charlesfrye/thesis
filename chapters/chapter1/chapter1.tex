@@ -825,7 +825,7 @@ from which the Hessians of the Gaussian random field model
 are drawn.
 For a fuller treatment of the theory of random matrices,
 including proofs of the statements below regarding spectra,
-see~\cite{tao2012}.
+see~\cite{feier2012,tao2012}.
 
 The eigenvalues of random matrices enjoy a similar phenomenon
 to the law of large numbers for averages of random variables:
@@ -847,20 +847,20 @@ the symmetric Wigner random matrices.
 		\forall i,j &\suchthat 1 \leq i < j \leq n\\
 			&\Ex{M_{i, j}} = 0\\
 			&\Ex{M_{i, j}^2} = 1/n\\
-			&M_{j, i} = M_{i, j} \text{\ and\ } M_{i, j} \text{\ i.i.d}\\
+			&M_{j, i} = M_{i, j} \text{\ and\ } M_{i, j} \text{\ iid}\\
 		\forall i\\
 			&\Ex{M_{i, i}} = \gamma\\
 			&\Ex{M_{i, i}^2} = 1/n\\
 			&M_{i, i} \text{\ i.i.d}
 	\end{align*}
-	where i.i.d.~is short-hand for independent
+	where iid is short-hand for independent
 	and identically-distributed
 	and $\gamma \in \R$.
 	Note that the entries along the diagonal,
 	defined in the second block,
 	may have a different
 	distribution than the entries off the diagonal,
-	but both groups are i.i.d..
+	but both groups are iid.
 \end{definition}
 
 A single draw from this ensemble is pictured
@@ -918,13 +918,13 @@ This gives an index that is similarly dependent.
 
 How well does this spectrum match up against the observed eigenvalues
 of neural network loss Hessians?
-Since the expected distribution is
+The expected distribution is
 continuous with respect to the Lebesgue measure,
 i.e.~it has no atoms, or single points with finite probability mass.
 In particular, there is no atom at $0$,
 and so the random matrices almost surely have no exactly zero eigenvalues.
 This means that their kernel, defined below, consists only of the zero vector,
-and the matrices have inverses.
+and the matrices almost surely have inverses.
 
 \begin{definition}{Kernel, Co-Kernel, and Rank}{kernel}
 	For a matrix $M\inR^{m\times n}$,
@@ -947,8 +947,7 @@ and the matrices have inverses.
 \end{definition}
 
 This is in stark contrast to the Hessian matrices
-of typical neural network loss functions.
-An example is shown in~\figureref{nn-hess}.
+of typical neural network loss functions~\cite{sagun2017}.
 There are many $0$ eigenvalues,
 along with some eigenvalues at much larger values,
 with fewer and lower magnitude negative eigenvalues.
@@ -956,6 +955,129 @@ Furthermore, the low-rank structure of the Hessian matrix
 can be read off from the clear patterns in the values,
 unlike the clearly independent values
 in the matrix in~\figureref{wigner-rm}.
+
+There is an alternative random matrix ensemble
+that produces matrices of this type:
+the Wishart random matrices.
+
+\begin{definition}{Wishart Random Matrix}{wishart}
+	A random square $n\times n$ matrix $M$ is \emph{Wishart}
+	if it can be constructed as
+	\begin{align}
+		M = XX^\top
+	\end{align}
+	where $X$ is a random $n \times k$ matrix with
+	iid Gaussian entries
+	\begin{align}
+		X_{ij} \sim \Normal\left(0, 1/k\right)
+	\end{align}
+	It is the sample covariance matrix of a $k$-element sample
+	of an $n$-dimensional Gaussian vector with
+	iid components.
+\end{definition}
+
+The rank of a Wishart random matrix is almost surely equal to
+the minimum of $n$ and $k$.
+When $k$ is less than $n$,
+the matrix is low-rank.
+
+The expected spectrum of a Wishart random matrix
+follows the Mar{\c c}enko-Pastur distribution
+with parameter $\gamma = \frac{n}{k}$,
+defined below.
+A single draw from this ensemble is pictured
+in~\figureref{wishart-rm},
+along with its observed eigenvalue distribution
+and cumulative distribution.
+Note the presence of a large bulk at $0$.
+
+\begin{definition}{Mar{\c c}enko-Pastur Distribution}{mp-dist}
+	The \emph{Mar{\c c}enko-Pastur distribution}
+	with parameter $\gamma$ is defined as
+	\begin{equation}\equationlabel{def-mp-dist}
+		\nu(X) =
+			\begin{cases}
+				\Ind\left(0 \in X\right)%
+					\left(1-\frac{1}{\gamma}\right) + \mu(X),
+				& \text{if } \gamma > 1\\
+				\mu(X),
+				& \text{if } \gamma \leq 1\\
+			\end{cases}
+	\end{equation}
+	where the measure $\mu$,
+	which is absolutely continuous, is defined
+	by its associated density
+	$d\mu\from\left[\lambda_-, \lambda_+\right]\to\R$:
+	\begin{equation}\equationlabel{def-mp-density}
+		d\mu(\lambda) = \frac{1}{2\pi}%
+		\frac{\sqrt{\left(\lambda_+ - \lambda\right)\left(\lambda-\lambda_-\right)}}%
+		{\gamma\lambda} d\lambda
+	\end{equation}
+	where $\lambda_{\pm} = {\left(1 \pm \sqrt{\gamma}\right)}^2$.
+\end{definition}
+
+\begin{figure}[ht]
+	\begin{center}
+		\includegraphics[width=\textwidth]{img/chapter1/wishart-rm.pdf}
+	\end{center}
+	\caption{\textbf{The Mar{\c c}enko-Pastur Distribution}.}%
+	{\textbf{A}: An example $100\times100$ Wishart random matrix with rank $k=10$
+		drawn from the ensemble in~\defref{wishart}.
+		More negative values in black, more positive values in white.
+	\textbf{B}: The expected spectral density of the matrix in \emph{A} (gold)
+		outside of the bulk at $0$,
+		which is given by~\equationref{def-mp-density},
+		with parameter $\gamma=100/10=10$.
+		and the histogram of observed eigenvalues (blue). Note the close match.
+	\textbf{C}: The expected cumulative spectral distribution
+		of the matrix in \emph{A} (gold),
+		which is the value of $\nu\left(\left[0, \lambda\right]\right)$
+		(defined in~\equationref{def-mp-dist})
+		and the cumulative fraction of observed eigenvalues (blue).}
+	\figurelabel{wishart-rm}
+\end{figure}
+
+But this matrix ensemble is on its own inadequate
+for modeling neural network loss Hessians,
+since its members are always positive semi-definite,
+as the domain of the density $d\mu$
+in~\equationref{def-mp-density} is non-negative.
+A random function whose Hessians are members of this ensemble
+will always be convex.
+
+The authors of~\cite{pennington2017}
+proposed a parameterized mixture of Wigner and Wishart random matrices
+as a better qualitative model of neural network loss Hessians.
+The random Hessians are a sum of random matrices:
+a Wishart part that contributes singularity
+and large positive eigenvalues
+and a Wigner part that contributes
+moderately-sized positive and negative eigenvalues.
+Just as the Fourier transform allows us to calculate
+the distribution of a sum of independent random variables
+from their separate distributions,
+the Stieltjes and $\cR$ transforms combine
+to allow the calculation of the expected spectrum of a sum of
+freely independent random matrices from knowledge of the separate expected spectra.
+In this model, the relative weight of the Wishart part
+increases as the loss decreases,
+so that at low loss the loss Hessian is almost surely positive semi-definite,
+while it is almost surely indefinite at higher values of the loss.
+
+The details of this derivation are in~\cite{pennington2017},
+along with a more sophisticated model
+for the loss of a single hidden-layer ReLU network.
+Even without any additions,
+this model is able to better match the qualitative features of
+neural network loss Hessians
+(singularity, large positive eigenvalues)
+while retaining the NBLM property.
+Furthermore,~\cite{pennington2017}
+includes numerical experiments indicating
+some match between the model and the loss and index
+of critical points in a moderately-sized neural network
+(though we will see, in~\chapterref{three},
+that this evidence is somewhat weak).
 
 \subsection{Criticism of the No-Bad-Local-Minima Theory}\sectionlabel{critic}
 \subsection{Alternatives to the No-Bad-Local-Minima Theory}\sectionlabel{alternate}
