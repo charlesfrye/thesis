@@ -33,7 +33,7 @@ def main():
         completed_linecount_process = subprocess.run(
                 ["wc", "-l", f"{tex}"], capture_output=True)
         process_stdout_as_str = \
-            completed_linecount_process.stdout.decode("UTF-8")
+            completed_linecount_process.stdout.decode("UTF-8").strip()
         linecount = process_stdout_as_str.split(" ")[0]
         outlines.append(",".join([now_string, linecount, tex.name+"\n"]))
 
