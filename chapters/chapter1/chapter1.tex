@@ -28,6 +28,8 @@ I will try to tell the story of the research project
 laid out in this thesis as it was experienced,
 warts and all,
 and in terms comprehensible to a wide audience.
+If you're only interested in the technical material,
+proceed to the next section,~\sectionref{nnls}.
 
 Neural networks are machine learning systems
 that are, as of the writing of this thesis in 2020,
@@ -126,9 +128,9 @@ gradient-flat points, not critical points,
 which has distinct consequences for our understanding of neural networks.
 
 In the remainder of this chapter,
-I will set up the problem of training neural networks,
-describe the critical point-based perspective on it,
-and lay out the major algorithms for critical point finding.
+I will set up the problem of training neural networks
+and describe the critical point-based perspective on it,
+the no-bad-local-minima theory.
 
 \section{Neural Network Losses}\sectionlabel{nnls}
 
@@ -455,13 +457,14 @@ we have that
 \end{align}
 
 Such a $\theta^*$ is a called a \emph{local minimum},
-since it is the minimizer of $L$ in all its neighborhoods
+since it is a minimizer of $L$ in all its neighborhoods
 under a given size.
 \begin{definition}{Local Minima}{lm}
 	The set of all \emph{local minima} of a scalar function $L$
 	on a domain $\Theta$ is denoted $\Theta^L_{\lm}$ and defined as
 	\begin{equation}\equationlabel{def-thetalm}
-		\Theta^L_{\lm} \defeq \Set{\theta \in \Theta \suchthat L(\theta + \eps) \geq \theta}
+		\Theta^L_{\lm} \defeq
+		\Set{\theta \in \Theta \suchthat L(\theta + \eps) \geq L(\theta)}
 	\end{equation}
 	for some $\eps > 0$.
 	When unambiguous, the super-script $L$ will be omitted.
@@ -648,8 +651,10 @@ we will explain how this model was improved
 by incorporating observations about the spectrum
 of the Hessians of neural networks~\cite{pennington2017}.
 Then, we will discuss, in \sectionref{critic},
-weaknesses of and negative analytical results for the NBLM theory,
-and close with a review of the alternatives (\sectionref{alternate}).
+weaknesses of and negative analytical results for
+the broadest versions of the NBLM theory,
+and close with a review of the alternatives,
+in~\sectionref{alternative}.
 
 \subsection{The Gaussian Random Field Model of Neural Network Losses}\sectionlabel{grf}
 
@@ -1040,7 +1045,7 @@ Note the presence of a large bulk at $0$.
 But this matrix ensemble is on its own inadequate
 for modeling neural network loss Hessians,
 since its members are always positive semi-definite,
-as the domain of the density $d\mu$
+as the support of the density $d\mu$
 in~\equationref{def-mp-density} is non-negative.
 A random function whose Hessians are members of this ensemble
 will always be convex.
@@ -1080,19 +1085,218 @@ of critical points in a moderately-sized neural network
 that this evidence is somewhat weak).
 
 \subsection{Criticism of the No-Bad-Local-Minima Theory}\sectionlabel{critic}
-\subsection{Alternatives to the No-Bad-Local-Minima Theory}\sectionlabel{alternate}
 
-In \exampleref{gp}, it was noted that
-the functions computed by neural networks
-can be modeled by Gaussian random fields.
-Furthermore, from this point of view,
-wide neural networks approximately descend a convex loss function%
-~\cite{jacot2018}.
-If this approximation is good,
-then the no-bad-local-minima theory,
-even if true,
-is irrelevant.
+While the NBLM theory agrees qualitatively and in some cases quantitatively
+with observations of neural network loss functions,
+it is not without its flaws.
 
-\onlyinsubfile{\printbibliography}
+First, the approach based on critical points
+and smooth Gaussian random fields fails
+in the case of non-smooth activations or cost functions.
+The popular \emph{ReLU} activation function,
+$\ReLU\left(x\right) = \max(x, 0)$,
+is non-smooth because it is not differentiable at $0$,
+as is the \emph{hinge} cost function for binary classification,
+$c(y, \hat{y}) = \max(1-y\cdot\hat{y}, 0)$,
+where the two class labels are $\pm 1$.
+Non-smooth functions may have local minima
+without having any points where the gradient is $0$,
+as in the Euclidean norm $\norm{v}$,
+which specializes to the absolute value in the one-dimensional case.
+
+Because neural networks rely on gradients for optimization,
+it is typical for activations and costs
+to be differentiable almost everywhere,
+so it might seem that this is a mere technicality.
+However, it can be shown that for networks
+with that activation and cost,
+all local minima are either non-differentiable or constant%
+~\cite{laurent2017}.
+An analysis based on differentiable minima would only
+consider the constant minima,
+which would give an overly-optimistic picture
+of the loss for many non-smooth losses.
+
+Second,
+it can be shown that the strict form of the NBLM theory is false.
+For networks with ReLU neurons, the theory is clearly false:
+if the parameters are such that all of the inputs to the
+ReLU function are $0$ in one layer,
+e.g.~if the biases are large and negative,
+then the loss is locally constant
+but may have arbitrarily high value.
+Recent work has further shown that,
+if biases are intialized too small,
+ReLU networks converge to bad local minima%
+~\cite{holzmller2020}.
+
+For some time, it was believed that in the smooth case,
+despite negative results for small networks,
+e.g.~\cite{auer1996},
+a sufficiently-large network had
+no bad local minima,
+thanks to a proof in~\cite{yu1995}.
+However, this proof was incorrect,
+as shown in~\cite{li2018},
+and only implies the non-existence of
+\emph{strict} local minima,
+where the Hessian is positive definite.
+Further work demonstrated that non-strict bad local minima
+are generically present for a wide variety of activation functions,
+not just non-smooth activations,
+for arbitrarily large widths%
+~\cite{ding2019}.
+
+This suggests that the rosy picture painted by the numerical results
+in~\cite{dauphin2014} and~\cite{pennington2017}
+was somewhat mis-leading.
+It remains possible, however,
+that with the right intialization,
+these bad local minima
+are avoided,
+and so some form of the NBLM theory holds,
+perhaps for the loss restricted to a region in the vicinity
+of the initial point.
+
+\subsection{Alternatives to the No-Bad-Local-Minima Theory}\sectionlabel{alternative}
+
+The alternative method to
+demonstrate the convergence of gradient-based methods
+on neural network losses it to prove it directly,
+rather than relying on generic optimization proofs
+by demonstrating that the loss function falls in some
+privileged class.
+
+There are two closely-related approaches
+that have born fruit in recent years:
+an asymptotic approach, based on the Neural Tangent Kernel,
+and a direct approach, based on over-parameterization.
+
+\subsubsection{Over-Parameterization}
+
+The random matrix theory approach outlined in%
+~\sectionref{grf} and~\sectionref{wishart}
+was motivated by the observation that larger networks
+were easier to train.
+To some, this suggested that there were special properties
+of generic (random, from the right ensemble) high-dimensional functions.
+
+Alternatively, it could be the case that the optimizability
+of large neural networks follows directly from their size.
+Both~\cite{allenzhu2018} and~\cite{du2018}
+prove that gradient descent applied to a neural network loss
+converges to within $\epsilon$ of a global minimum from a random initialization
+within a polynomial number of steps in terms of
+problem-specific parameters so long as the number of
+neurons in each layer is polynomial in a similar set of parameters.
+In both cases, the convergence rate in terms of $\epsilon$
+is the same as in traditional proofs for gradient methods
+(i.e., log-linear).
+The result in~\cite{du2018} has an exponential dependence on depth for networks
+without residual connections,
+which is absent in~\cite{allenzhu2018}.
+
+While these are useful proofs of principle,
+polynomial dependence is still too great to be of practical use
+if the degree of the polynomial is high,
+as is noted in~\cite{allenzhu2018}.
+For example, one of the polynomial terms for the width in~\cite{du2018},
+which is applied to the number of samples, has degree $4$.
+For the MNIST dataset~\cite{lecun2010},
+which has 6e4 examples,
+this implies a minimum width more than 1e19 neurons,
+up to linear factors.
+The same parameter in~\cite{allenzhu2018} has degree $30$.
+Another term in~\cite{du2018}, $\lambda_{\min}$,
+can be exponentially small in terms of other natural parameters.
+The regime in which these claims operate
+is clearly outside the realm of practically implementable networks.
+
+\subsubsection{The Neural Tangent Kernel}
+
+With widths so large,
+they might as well be infinite.
+In the infinite-width limit,
+neural networks with random weights become
+Gaussian random fields as in~\sectionref{grf},
+thanks to a form of Central Limit Theorem.
+Though the correspondence between shallow Bayesian neural networks
+and Gaussian processes dates back to the 1990s%
+~\cite{neal1996},
+it was only recently that this correspondence was extended
+to an extremely broad class of neural networks,
+dubbed \emph{Tensor Programs}%
+~\cite{yang2019}.
+This view enabled the automated computation of posteriors
+from these networks~\cite{novak2019},
+akin to the automated computation of gradients
+provided by automatic differentiation packages.
+With the right tricks~\cite{li2019},
+these posteriors can be competitive
+with more traditional networks.
+
+Importantly for the optimization perspective,
+this approach can be used to analyze
+the convergence of non-Bayesian neural networks.
+Indeed, in this view, neural networks trained by
+stochastic gradient descent from random initialization
+are actually undergoing \emph{kernel gradient descent},
+which descends a convex function~\cite{jacot2018},
+even when the loss is a non-convex function of the parameters.
+
+While this approach is exciting
+and provides a fundamentally different way
+to think about and train neural networks,
+it is asymptotic.
+Whether the claims apply to finite-sized networks was at first unclear.
+The authors of~\cite{arora2019}
+demonstrated equivalence between certain finite-width networks
+and their limit with high probability.
+However, the minimum layer width was again polynomial in certain problem parameters,
+and again the degrees of the polynomials were high ($4$+).
+It remains to be seen whether tighter bounds can be proven.
+
+\section{Conclusion}
+
+Neural networks are, in many cases,
+easily trained to approximate global minima
+from random initializations.
+This suggests that their loss functions may have
+an (effective) no-bad-local-minima property:
+all local minima are (nearly) global minima.
+This NBLM property is shared by a large class of random functions,
+the Gaussian random fields~\cite{bray2007,dauphin2014}.
+Though the typical Wigner and Wishart ensembles of random matrices
+are not sufficient alone to model neural network loss functions,
+an ensemble derived by mixing them is~\cite{pennington2017}.
+
+However, analytical results~\cite{ding2019}
+indicate that this picture is incorrect
+and that, analytically speaking,
+neural network losses have bad local minima,
+even if they aren't found by typical training procedures.
+Alternative approaches based on
+overparameterization~\cite{allenzhu2018}
+and its infinite-width limit~\cite{jacot2018}
+have suggested a different path to understanding
+the trainability of neural networks,
+but they require unreasonably large hidden layers.
+
+In the absence of strong theoretical results,
+it is important to obtain better empirical evidence,
+building on the work of%
+~\cite{dauphin2014} and~\cite{pennington2017}.
+In~\chapterref{two},
+we will develop algorithms for examining
+the critical points of neural network loss functions.
+In~\chapterref{three},
+we will apply these algorithms to some example
+neural network losses,
+and observe something interesting:
+due to numerical and analytical issues,
+previously-used algorithms may not have
+been characterizing the critical points of loss functions,
+but instead another class of points,
+gradient-flat points.
 
 \end{document}
