@@ -621,7 +621,7 @@ are approximately global minima,
 we will say that the function has the
 \emph{no-bad-local-minima property},
 or the NBLM property.
-While~\examplref{1ddlae} has the NBLM property,
+While~\exampleref{1ddlae} has the NBLM property,
 the function in panel B of~\figref{convex-vs-nonconvex}
 does not, due to the presence of a non-global local minimum.
 We will refer to the hypothesis that
@@ -664,7 +664,7 @@ that have the NBLM property is the class of
 \emph{Gaussian random fields}.
 Gaussian random fields are random functions
 from $\R^n$ to $\R$.
-An example of a Gaussian random field defined on $\R^2$
+An example of a single draw from a Gaussian random field defined on $\R^2$
 appears in~\figureref{2dgrf}.
 
 With most random variables,
@@ -764,14 +764,14 @@ The key work on the critical points of smooth Gaussian random fields
 is~\cite{bray2007}.
 Their core result showed
 that the expected index (\defref{index}) of critical points
-is a tight function of the field's value at that point
-(deviations of order $O(1/\sqrt{N})$,
-where $N$ is the dimension of the field).
+is a tight function of the field's value at that point%
+\footnote{Deviations of order $O(1/\sqrt{N})$,
+where $N$ is the dimension of the field.}.
 Furthermore, for many kernels,
 including the squared exponential kernel,
 the expected index is an increasing function of the loss,
-and the deviations are even smaller
-($O(1/N)$).
+and the deviations are even smaller%
+\footnote{Deviations of order $O(1/N)$.}.
 
 As a consequence, if a high-dimensional loss function is a typical member of the
 this random field ensemble, then
@@ -796,7 +796,7 @@ One benefit of this model is that it
 applies only to high-dimensional loss functions.
 This would explain the difference in optimizability
 of contemporary neural networks,
-where parameter counts ($\dim\left(\Theta\right)$)
+where parameter counts ($\dim \Theta$)
 are in the hundreds of thousands or millions,
 and neural networks in the 80s and 90s,
 which were orders of magnitude smaller in size.
