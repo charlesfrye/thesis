@@ -2,9 +2,196 @@
 
 \begin{document}
 
-\chapter{Defining, Implementing, and Verifying
-Critical Point-Finding Algorithms}\chapterlabel{two}
+\chapter{Verifying
+Critical Point-Finding Algorithms
+with the Deep Linear Autoencoder}\chapterlabel{two}
+\onlyinsubfile{\begin{KeepFromToc}
+		\tableofcontents
+		\clearpage
+		\listoffigures
+		\listoftables
+	\end{KeepFromToc}}
+\onlyinsubfile{\clearpage}
+\onlyinsubfile{\linenumbers}
+
+\section{Chapter Summary}\sectionlabel{summary}
+
+In this chapter,
+we define multiple algorithms for finding critical points:
+gradient norm minimization
+and a wide variety of Newton methods
+(\sectionref{algo}).
+Then, in \sectionref{verify},
+we demonstrate the behavior of these algorithms
+on several simple neural networks.
+First, as a warm up,
+we cover multiple linear and logistic regression
+(\sectionref{linear}).
+Then, we apply these algorithms to a more realistic,
+but still linear and so tractable network:
+a deep linear auto-encoder.
+This example, which is
+a generalization of \exampleref{1ddlae},
+is a form of principal components analysis.
+It is used to draw lessons useful
+for finding the critical points of non-linear networks,
+the subject of \chapterref{three}.
+
+\section{Algorithms for Finding Critical Points}\sectionlabel{algo}
+
+Importantly, we restrict ourselves to numerical approaches.
+While the analytical critical points exactly satisfy
+the analytical system of (possibly non-linear) equations
+\begin{equation}
+	\grad{L}{\theta} = 0
+\end{equation}
+\noindent numerical approaches cannot guarantee
+exact equality.
+Instead, they can at best guarantee \emph{approximate} equality,
+\begin{equation}
+	\sgn{L}{\theta} \leq \eps
+\end{equation}
+\noindent for some $\eps > 0$.
+So our algorithms will actually recover approximate critical points:
+
+\begin{definition}{$\eps$-Critical Points}{epscritical}
+	The set of all \emph{$\eps$-critical points} of a loss function $L$
+	on a domain $\Theta$ for a fixed $\eps\geq0$ is denoted $\Theta^L_{\ecp}$
+	and defined as
+	\begin{equation}\equationlabel{def-epscp}
+		\Theta^L_{\ecp} \defeq
+		\Set{\theta \in \Theta \suchthat \sgn{L}{\theta} \leq \eps}
+	\end{equation}
+	When unambiguous, the super-script $L$ will be omitted.
+	See \defref{critical}.
+\end{definition}
+
+If only introduced in the case of large-dimensional $\Theta$
+and complex loss function $L$,
+this definition and the problem setup can be somewhat intimidating.
+\sectionref{sqrt} demonstrates a precise analogy
+between finding critical points of complicated loss functions
+and a fundamental arithmetic operation: taking the square root.
+
+The lessons of this analogy are used to motivate
+each of three algorithms in turn:
+gradient norm minimization (\sectionref{gnm}),
+exact Newton methods (\sectionref{exact}),
+and inexact Newton methods (\sectionref{inexact}).
+Practical versions of Newton methods
+for high-dimensional problems
+require additional tricks,
+which are reviewed in \sectionref{practical}.
+
+\subsection{Optimization Approach to Taking Square Roots}\sectionlabel{sqrt}
+
+Addition ($+$) and multiplication ($\times$)
+are simple operations, in the following sense:
+given exact binary representations for two numbers,
+an exact binary representation for the result of $+$ or $\times$
+applied to those two numbers can be obtained in finite time\footnote{%
+Specifically, addition is $O(n)$ and
+multiplication is $O(n\log n)$~\cite{harvey2019},
+courtesy of the Fast Fourier Transform and the convolution theorem.}.
+The symbols $a + b$ and $a \times b$ represent the exact, finite output
+of a concrete, finite-time algorithm.
+That is, both operations define closed monoids over
+binary strings of
+(importantly!) finite-length.
+
+This is not true of division ($\div$), inverse ($\inv{}$), or square root%
+\footnote{We take the type signature of $\sqrt$ to be
+$\sqrt{}\from\R_{\geq 0}\to\R_{\geq 0}$,
+i.e.~we do not allow non-real or negative square roots.}
+($\sqrt{}$).
+In these cases, the operation is actually defined in terms of a promise regarding what happens
+when the output of this operation is subjected to $\times$:
+\begin{align}
+    b = a \div c &\implies b \times c = a\equationlabel{div-promise}\\
+    b = a^{-1} &\implies b \times a = 1\equationlabel{inv-promise} \\
+    b = \sqrt{a} &\implies b \times b = a\equationlabel{sqrt-promise}
+\end{align}
+\noindent and for an exact representation of a number $a$,
+the number that fulfills this promise might not have an exact representation,
+as is famously the case for $\sqrt{2}$.
+This makes algorithm design for these operations more complex than for $+$ and $\times$.
+
+There are individual strategies for each,
+but one general idea that turns out to be very powerful is
+\emph{relaxation to an optimization problem}.
+That is, we take the exact promises made above,
+recognize them as statements of the optimality of the output for some criterion,
+and then use that criterion to define an approximate promise,
+true up to some tolerance $\eps$.
+
+For $\sqrt{}$, we rearrange the promise~\ref{eq:sqrt-promise},
+denoting its exact solution with a $\star$, into:
+\begin{align}
+    b^\star &\defeq \sqrt{a} \\
+    b^\star \times b^\star &= a  \\
+    b^\star \times b^\star - a &= 0  \\
+    \snorm{b^\star \times b^\star - a} &=0\equationlabel{sqrt-opt-criter}
+\end{align}
+
+\noindent and then recognize that, due to the non-negativity of the norm,
+\equationref{sqrt-opt-criter} is a statement of optimality about $b^\star$.
+That is,
+the value $b^\star$ that we are looking for is the
+argument that minimizes the expression on the LHS:\@
+\begin{equation}
+	b^\star = \argmin_{b \in \R_{\geq 0}} \snorm{b \times b - a}
+\end{equation}
+
+Exactly minimizing this expression to arbitrary precision
+might be impossible,
+so we instead consider a set of approximate square roots,
+to a tolerance $\eps$:
+\begin{equation}
+	B_\eps \defeq
+	\Set{b \in \R_{\geq 0} \suchthat \snorm{b^\star \times b^\star - a} \leq \eps }
+\end{equation}
+\noindent and so the problem of square root finding
+is the problem of finding a member of $B_\eps$.
+
+Analogously, the problem of critical point-finding
+is the problem of \emph{gradient root finding}:
+instead of trying to find a value $b$ such that
+$b\times b - a$
+is approximately $0$,
+we are trying to find a value $\theta$ such that
+$\grad{L}{\theta}$
+is approximately $0$.
+This $\theta$ is a member of $\Theta^L_{\ecp}$,
+\defref{epscritical}.
+
+\subsection{Gradient Norm Minimization}\sectionlabel{gnm}
+
+\subsection{Exact Newton Methods}\sectionlabel{exact}
+
+\subsubsection{The Babylonian Algorithm}\sectionlabel{babylon}
+
+\subsubsection{Newton-Raphson}\sectionlabel{newton}
+
+\subsubsection{Pseudo-Inverse Newton}\sectionlabel{pseudoinverse}
+
+\subsection{Inexact Newton Methods}\sectionlabel{inexact}
+
+\subsubsection{Optimization Approach to Division}\sectionlabel{div}
+
+\subsection{Practical Newton Methods}\sectionlabel{practical}
+
+\subsubsection{Damped Newton}\sectionlabel{damped}
+
+\subsubsection{Guarded Newton}\sectionlabel{guarded}
+
+\section{Verifying Critical Point-Finding Algorithms}\sectionlabel{verify}
+
+\subsection{Linear and Logistic Regression}\sectionlabel{linear}
+
+\subsection{The Deep Linear Auto-Encoder}\sectionlabel{dlae}
 
 \onlyinsubfile{\printbibliography}
+
+
 
 \end{document}
