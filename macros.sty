@@ -139,7 +139,6 @@
 \renewcommand{\le}{\leqslant}
 \renewcommand{\geq}{\geqslant}
 \renewcommand{\ge}{\geqslant}
-\newcommand{\iso}{\cong}
 
 % parentheses
 \newcommand{\paren}[1]{(#1)}
@@ -165,8 +164,11 @@
 \newcommand{\norm}[1]{\lVert#1\rVert}
 \newcommand{\Norm}[1]{\left\lVert#1\right\rVert}
 
-% declare function f as $f \from X \to Y$
+% function declarations
 \newcommand{\from}{\colon}
+\newcommand{\onto}{\twoheadrightarrow}
+\newcommand{\into}{\hookrightarrow}
+\newcommand{\iso}{\leftrightarrow}
 
 % differential as in "\int x\rd x"
 \newcommand\rd{\,\mathrm{d}}
@@ -241,9 +243,10 @@
 % Indicator function
 \newcommand{\Ind}{\mathbb{I}}
 
-% Hyphen in math mode
+% Punctuation in math mode
 \mathchardef\mhyphen="2D
-
+\DeclareMathSymbol{\mlq}{\mathord}{operators}{'134}
+\DeclareMathSymbol{\mrq}{\mathord}{operators}{'42}
 
 % common abbrevs
 \newcommand{\ignore}[1]{}
@@ -262,8 +265,11 @@
 \newcommand{\ecp}{\eps\mhyphen\cp}
 \newcommand{\lm}{\mathrm{lm}}
 \newcommand{\ReLU}{\mathrm{ReLU}}
+
+% Useful Operators
 \newcommand{\inv}[1]{#1^{-1}}
 \newcommand{\pinv}[1]{#1^{+}}
+\newcommand{\after}{\circ}
 
 % distributions
 \newcommand{\Normal}{\mathrm{Normal}}
