@@ -1,5 +1,6 @@
 \documentclass[../../thesis.tex]{subfiles}
 
+% chktex-file 18
 \begin{document}
 
 \chapter{Verifying
@@ -446,6 +447,13 @@ with constant Hessian.
 
 We call the value $p^\star$ the \emph{pure Newton step}
 or the \emph{exact Newton step}.
+Note the absence of any step size.
+We call the linear system of equations in $p$
+defined by
+\begin{equation}\equationlabel{newtonsystem}
+	0 &= \grad{f}{\theta} + \hess{f}{\theta}p
+\end{equation}
+the \emph{Newton system} of equations.
 
 For functions with non-constant Hessian,
 i.e.~those which cannot be represented by a degree two polynomial,
@@ -465,6 +473,244 @@ with each iteration, the number of bits of precision increases by a fixed amount
 it is exponential.}.
 
 \subsubsection{Pseudo-Inverse Newton}\sectionlabel{pseudoinverse}
+
+In defining the Babylonian algorithm,
+\algoref{babylon},
+it was important that the starting point not be $0$,
+or else the update would be undefined due to division by $0$.
+Equivalently,
+the full Newton method \algoref{newton}
+required that the Hessian was non-singular,
+else the inverse is undefined.
+
+But this is not a fundamental restriction,
+which is lucky because the loss functions of neural networks
+are highly singular~\cite{sagun2017}.
+The key property of the update $p^\star$
+was that it solved the Newton system
+\begin{equation}\equationlabel{newtonsystem}
+	0 = \grad{f}{\theta} + \hess{f}{\theta}p
+\end{equation}
+\noindent which has a solution whenever $-\grad{f}{\theta}$
+is in the image of $\hess{f}{\theta}$,
+the linear subspace of possible outputs of $\hess{f}{\theta}$.
+
+\begin{definition}{Image and Co-Image of a Matrix}{image}
+	For a matrix $M$ in $\R^{m \times n}$,
+	we define the \emph{image} of M, denoted $\im M$, as
+	\begin{equation}
+		\im M \defeq \Set{v \in \R^m \suchthat \exists w \suchthat Mw=v}
+	\end{equation}
+	and the \emph{co-image} of M, denoted $\co\im M$, as
+	\begin{equation}
+		\co\im M \defeq \Set{v \in \R^m \suchthat !\exists w \suchthat Mw=v}
+	\end{equation}
+	When the rank (\defref{kernel}) of $M$ is at least $m$,
+	the co-image of $M$ is empty.
+\end{definition}
+
+In this case, the solution $p^\star$
+can be obtained by applying the
+(Moore-Penrose) pseudo-inverse of the Hessian
+to the gradient.
+We will define this pseudo-inverse
+by means of the singular value decomposition.
+We will need several properties
+of this matrix later,
+so we do this in detail.
+
+\begin{definition}{Singular Value Decomposition}{svd}
+	For a matrix $M$ in $\R^{m \times n}$
+	with rank $r$,
+	we define the
+	\emph{singular value decomposition} or SVD of $M$
+	as the triple of matrices $V^\top$, $\Sigma$, $U$
+	such that
+	\begin{equation}
+		M = U \Sigma V^\top
+	\end{equation}
+	where $V^\top \in \R^{r \times n}$,
+	$\Sigma \in \R^{r \times r}$, and
+	$U \in \R^{m \times r}$
+	and $U$ and $V$ are orthonormal
+	and $\Sigma$ is diagonal.
+	The columns of $U$ are called the \emph{left-singular}
+	vectors of $M$, the columns of $V$ the \emph{right-singular}.
+	The diagonal entries of $\Sigma$ are the \emph{singular values} of $M$.
+	This form is sometimes called the \emph{compact SVD}.
+\end{definition}
+
+It can be shown that every matrix has a
+singular value decomposition~\cite{strang1993}.
+The singular value decomposition arises
+as the specialization of the First Isomorphism Theorem
+to the category of vector spaces and linear maps.
+We state it here in terms of functions,
+for readers not familiar with category theory,
+but it is more appropriately set in terms of morphisms.
+
+\begin{theorem}{The First Isomorphism Theorem}{firstiso}
+	\emph{Let $\cC$ be a collection of sets and all functions between them.
+	For any function $f\from A \to B$, where $f$, $A$, and $B$ are members of the collection,
+	there is a triple of functions $s$, $b$, and $i$ such that
+	\begin{equation}
+	      f = i \after b \after s
+	\end{equation}
+	where $s\from A \onto A/\sim$ is a surjection,
+	$b\from A/\sim \iso \im A$ is a bijection, and
+	$i\from \im A \into B$ is an injection
+	(indicated by arrow type).
+	The elements of the equivalence relation $\sim$
+	are given by pairs $(a, a^\prime) \in A \times A$
+	where $f(a) = f(a^\prime)$.}
+\end{theorem}
+
+The First Isomorphism Theorem states that every function can be decomposed
+into three constituent pieces:
+an onto mapping, or surjection,
+that classifies its inputs according to which output they are mapped to;
+a one-to-one mapping, or bijection,
+that picks the output corresponding to each class of input;
+and an into mapping, or injection,
+that inserts this output into the target set.
+
+\begin{example}{Decomposition of \texttt{is\_odd}}{isodd}
+	Consider the function $\texttt{is\_odd}\from \N \to \cS$,
+	where $\cS$ is the set of all strings in the English alphabet,
+	that returns \enquote{True} if the number is odd,
+	\enquote{False} otherwise.
+	This function can be decomposed as
+	\begin{equation}
+		\texttt{is\_odd} = \texttt{to\_string} \after \texttt{to\_bool} \after {\%}_2
+	\end{equation}
+	where $\%_2\from\N \to \Set{0, 1}$
+	computes the value mod $2$ and
+	\begin{equation*}
+		\texttt{to\_string}(b) = %chktex 36
+			\begin{cases}
+				\mlq \text{False} \mrq & \text{if } b = \bot \\
+				\mlq \text{True} \mrq & \text{if } b = \top
+			\end{cases} \quad
+		\texttt{to\_bool}(k) = %chktex 36
+			\begin{cases}
+			     \bot  & 	\text{if } k = 0 \\
+			     \top  & 	\text{if } k = 1
+			\end{cases}
+	\end{equation*}
+	This is summarized neatly by the diagram below:
+	\begin{center}
+	    \begin{tikzcd}
+		    \N \arrow[rr, "\texttt{is\_odd}"] \arrow[dd, "\%_2", two heads]
+		    &  & \cS\\
+		\ & \  & \\
+		\Set{0, 1} \arrow[rr, "\texttt{to\_bool}"]
+		&  & \mathbb{B} \arrow[uu, "\texttt{to\_string}", harpoon, hook]
+	    \end{tikzcd}
+	\end{center}
+\end{example}
+
+Now, let us view the SVD through this lens.
+First, $V^\top$ is a surjection because
+it is orthonormal and $r \leq n$.
+Second, $U$ is an injection because
+it is orthonormal and $m \geq r$.
+Finally, $\Sigma$ is a bijection
+because it is a diagonal matrix with non-zero diagonal entries.
+This establishes that the (compact) SVD
+is the same decomposition as in the First Isomorphism Theorem.
+Furthermore, for linear functions,
+two inputs can only be mapped to the same output
+if they are both mapped to $0$.
+If we take $0$ to be the representative of that equivalence class,
+the target of the surjection becomes the co-kernel of M
+(recall \defref{kernel}).
+The target of the bijection is the image of M.
+This set of relationships is summarized below.
+
+\begin{center}
+    \begin{tikzcd}
+	    \R^n \arrow[rr, "M" description] \arrow[dd, "V^\top" description, two heads]
+	    &  & \R^m \\
+	\ & \  & \\
+	\co \ker M \arrow[rr, "\Sigma"]
+	&  & \im M \arrow[uu, "U" description, harpoon, hook]
+    \end{tikzcd}
+\end{center}
+
+We are now ready to define the pseudo-inverse.
+We first define it for two simple classes of matrices,
+then extend it for all matrices by means of the SVD.\@
+
+\begin{definition}{Moore-Penrose Pseudo-Inverse}{pseudoinverse}
+	Let $O$ be an orthogonal matrix.
+	We define the pseudo-inverse of $O$,
+	denoted $\pinv{O}$, as
+	\begin{equation}
+		\pinv{O} \defeq O^{\top}
+	\end{equation}
+
+	Let $D$ be a diagonal matrix of full rank.
+	We define the pseudo-inverse of $D$ as
+	\begin{equation}
+		\pinv{D} \defeq \inv{D}
+	\end{equation}
+
+	Let $M$ be a matrix in $\R^{m \times n}$
+	and let its singular value decomposition be the triple
+	$V^\Top$, $\Sigma$, $U$.
+	We define the \emph{pseudo-inverse} of $M$,
+	denoted $\pinv{M}\from \R^m \to \R^n$, as
+	\begin{align}
+		\pinv{M}
+		&\defeq \pinv{V^{\top}}\pinv{\Sigma}\pinv{U}\\
+		&= V \inv{\Sigma} U^\top
+	\end{align}
+	This is sometimes known as the Moore-Penrose pseudo-inverse.
+	The relationships between these matrices
+	are summarized by the diagram below.
+	\begin{center}
+	    \begin{tikzcd}
+		    \R^n \arrow[rr, "M", bend left] \arrow[dd, "V^\top", two heads, bend right]
+		    &  & \R^m \arrow[dd, "U^\top", two heads, bend right] \arrow[ll, "M^+", dotted, bend left]                       \\
+		\ & \  & \\
+		\co \ker M \arrow[uu, "V", harpoon, hook, bend right]  \arrow[rr, "\Sigma", bend right]
+		&  & \im M \arrow[uu, "U", harpoon, hook, bend right] \arrow[ll, "\inv{\Sigma}", bend right]
+	    \end{tikzcd}
+	\end{center}
+\end{definition}
+
+Let's return to the problem of solving
+\equationref{newtonsystem}
+for an update $p^{\star}$.
+We see that whenever a vector $g$
+is in the image of the Hessian, $\hess{f}{\theta}$,
+we can apply the pseudoinverse, $\pinv{\hess{f}{\theta}}$,
+to $g$ to obtain a vector that is in the pre-image of $g$
+with respect to the Hessian.
+We choose this as our update,
+obtaining the algorithm below.
+
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $\theta_0 \in \R^N$,
+    $\nabla{f}\from\R^N\to\R^N$,
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$\\
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	$g \leftarrow \nabla{f}\left(\theta_t\right)$\\
+	$H \leftarrow \nabla^2{f}\left(\theta_t\right)$\\
+	$\theta_{t+1} \leftarrow \theta_t - \pinv{H}g$\\
+	$t \leftarrow t + 1$
+    }%
+    \algolabel{newtonPI}
+    \caption{Pseudo-Inverse Newton}
+\end{algorithm}
+
+We will return to the problem of what happens
+when the gradient is not in the image of the Hessian in \chapterref{three}.
+This will turn out to be critically important for understanding
+the behavior of Newton methods on neural network loss functions.
 
 \subsection{Inexact Newton Methods}\sectionlabel{inexact}
 
@@ -562,3 +808,4 @@ it is exponential.}.
 \onlyinsubfile{\printbibliography}
 
 \end{document}
+
