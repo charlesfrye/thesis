@@ -32,7 +32,7 @@ but still linear and so tractable network:
 a deep linear auto-encoder.
 This example, which is
 a generalization of \exampleref{1ddlae},
-is a form of principal components analysis.
+is closely connected to principal components analysis.
 It is used to draw lessons useful
 for finding the critical points of non-linear networks,
 the subject of \chapterref{three}.
@@ -42,13 +42,13 @@ the subject of \chapterref{three}.
 Importantly, we restrict ourselves to numerical approaches.
 While the analytical critical points exactly satisfy
 the analytical system of (possibly non-linear) equations
-\begin{equation}
+\begin{equation}\equationlabel{gradienteqns}
 	\grad{L}{\theta} = 0
 \end{equation}
 \noindent numerical approaches cannot guarantee
 exact equality.
 Instead, they can at best guarantee \emph{approximate} equality,
-\begin{equation}
+\begin{equation}\equationlabel{gradienteps}
 	\sgn{L}{\theta} \leq \eps
 \end{equation}
 \noindent for some $\eps > 0$.
@@ -146,7 +146,7 @@ Exactly minimizing this expression to arbitrary precision
 might be impossible,
 so we instead consider a set of approximate square roots,
 to a tolerance $\eps$:
-\begin{equation}
+\begin{equation}\equationlabel{sqrteps}
 	B_\eps \defeq
 	\Set{b \in \R_{\geq 0} \suchthat \snorm{b^\star \times b^\star - a} \leq \eps }
 \end{equation}
@@ -166,12 +166,99 @@ This $\theta$ is a member of $\Theta^L_{\ecp}$,
 
 \subsection{Gradient Norm Minimization}\sectionlabel{gnm}
 
+The simplest way to attack the problem
+of finding a point in
+\equationref{def-epscp} or \equationref{sqrteps}
+is to apply a first-order optimization algorithm.
+In the case of critical point-finding,
+we define an auxiliary function $g$,
+equal to half the squared gradient norm:
+\begin{equation}\equationlabel{def-g}
+	g(\theta) = \frac{1}{2}\sgn{L}{\theta}
+\end{equation}
+\noindent and apply our first-order optimization algorithm to it.
+
+This approach turns out to work poorly,
+so it is not widely disseminated enough to have a standard name.
+However, it is straightforward enough to be repeatedly discovered.
+The earliest use, to my knowledge,
+was in chemical physics~\cite{mciver1972},
+where the problem of finding saddles arises
+when computing transition states of chemical reactions.
+They gave it the name \emph{gradient norm minimization},
+which we use here.
+For several reasons, an alternative method
+for solving the problem of finding transition states
+called eigenvector-following became popular instead~\cite{cerjan1981}.
+Gradient norm minimization was then reinvented by two groups simultaneously in 2000
+(\cite{angelani2000,broderix2000})
+and its poor performance quickly noted~\cite{doye2002}.
+The method was apparently then reinvented by the authors of%
+~\cite{pennington2017}
+and applied to the problem of finding critical points of neural networks.
+
+While automatic differentiation can compute the derivatives of $g$ with no issue,
+it is still instructive to know its gradients,
+so let's derive them by hand.
+
+\begin{theorem}{Gradient of Squared Gradient Norm}{gnm-grad}
+	\emph{Let $L$ be a twice-differentiable function
+	from $\Theta$ to $\R$
+	and define $g(\theta) = \frac{1}{2}\sgn{L}{\theta}$.
+	Then the gradient function of $g$, $\grad{g}{\theta}$,
+	is given by
+	\begin{equation}
+		\grad{g}{\theta} = \hess{L}{\theta}\grad{L}{\theta}
+	\end{equation}
+	}
+
+	If we apply $g$ to a point $\theta + \eps$,
+	\begin{equation}
+		g(\theta + \eps) = \frac{1}{2}\sgn{L}{\theta + \eps}
+	\end{equation}
+	\noindent we see that the right-hand-side
+	contains the same expression as the left-hand-side
+	of the definition of the Hessian function,
+	\equationref{def-hessian}.
+	We can therefore replace that expression
+	with the decomposition on the right-hand-side:
+	\begin{equation}
+		g(\theta + \eps) = \frac{1}{2}\snorm{%
+		\grad{L}{\theta} + \hess{L}{\theta}\epsilon + o(\epsilon)}
+	\end{equation}
+	\noindent Then, we expand the squared norm into its constituent terms,
+	group like terms\footnote{%
+		Importantly, any $\eps$ inside a squared norm makes that term $o(\eps)$,
+	as does any $o(\eps)$.},
+	and simplify:
+	\begin{align}
+		g(\theta + \eps) &= \frac{1}{2}\sgn{L}{\theta}
+		+ \underbrace{\frac{1}{2}\snorm{\hess{L}{\theta}\eps}
+		+ \frac{1}{2}\snorm{o(\eps)}}_{o(\eps)}
+		+ \grad{L}{\theta}^\top\hess{L}{\theta}\eps
+		+ o(\eps)\\
+		g(\theta + \eps) &= g(\theta)
+		+ {\left(\hess{L}{\theta}\grad{L}{\theta}\right)}^\top\epsilon
+		+ o(\epsilon)
+	\end{align}
+	\noindent which implies,
+	by pattern-matching to \defref{gradient},
+	that the gradient of $g$ is
+	\begin{equation}\equationlabel{gnm-grad}
+		\grad{g}{\theta} = \hess{L}{\theta}\grad{L}{\theta}
+	\end{equation}
+\end{theorem}
+
+The minimal form of gradient norm minimization
+applies \algoref{gd} with these gradients,
+giving rise to \algoref{gnm}.
+
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
     $T\in \N$, $\alpha \in \R_{>0}$, $\theta_0 \in \R^N$,
     $\nabla{f}\from\R^N\to\R^N$,
-    $\nabla^2{f}\from\R^N\to\R^{N\times N}$
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$\\
     $t \leftarrow 0$\\
     \While{$t < T$}{%
 	$g \leftarrow \nabla{f}\left(\theta_t\right)$\\
@@ -180,13 +267,59 @@ This $\theta$ is a member of $\Theta^L_{\ecp}$,
 	$t \leftarrow t + 1$
     }%
     \algolabel{gnm}
-    \caption{Gradient Norm Minimization}
+    \caption{Gradient Norm Minimization by Gradient Descent}
 \end{algorithm}
+
+However, one advantage of the gradient norm minimization approach
+is that, because it is framed as the optimization
+of a scalar-valued function, any number of tricks
+from the world of optimization can be applied to it:
+stochastic methods, momentum, adaptive gradients,
+and so on.
+This is in contrast to the Newton methods reviewed below.
 
 \subsection{Exact Newton Methods}\sectionlabel{exact}
 
+Gradient norm minimization does not take any advantage
+of the special structure of the problem,
+namely that our optimization problem was introduced
+as a proxy for solving a system of equations.
+The other major class of algorithms
+for critical point-finding,
+\emph{Newton methods},
+are specifically designed to solve systems of equations.
+In this section,
+we review the fundamental, textbook forms
+of the method.
+Then, in the following sections,
+\sectionref{inexact} and \sectionref{practical},
+we introduce extensions that make it feasible for
+problems with large dimension and higher-order nonlinearity,
+like many neural network loss functions.
+
 \subsubsection{The Babylonian Algorithm}\sectionlabel{babylon}
 
+The very earliest form of Newton's method
+dates back perhaps to the 17th century BCE,
+based on the evidence of an extremely precise
+(to within 2e-6)
+approximation to the square root of 2
+on a Babylonian clay tablet.
+It was certainly known as a method
+for computing square roots by the first century CE,
+when it appears in the work of Hero of Alexandria.
+See~\cite{brown1999} for details.
+
+The intuition for this algorithm is geometric:
+if a square of area $x$
+is smaller than a square with sides of length $\theta$,
+then it is larger than the square with sides of length $x \div \theta$,
+or vice versa.
+In either case, the square with sides equal in length to the average
+of $\theta$ and $x \div \theta$
+is closer in area to $x$.
+This improvement can be applied iteratively,
+yielding the below algorithm:
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -198,15 +331,53 @@ This $\theta$ is a member of $\Theta^L_{\ecp}$,
     \algolabel{babylon}
     \caption{Babylonian Algorithm for Square Roots}
 \end{algorithm}
+\noindent Recall that the motivation for considering the square root problem
+was that $\sqrt{}$, unlike $+$ and $\times$,
+does not have an exact finite-time algorithm.
+This is also true of $\div$, which appears in \algoref{babylon}.
+We will come back to this in \sectionref{div},
+in order to better understand inexact Newton methods.
 
 \subsubsection{Newton-Raphson}\sectionlabel{newton}
+
+If we define
+\begin{equation}
+	f(\theta) = x - \theta^2
+\end{equation}
+\noindent then the update in \algoref{babylon}
+can be written
+\begin{align}
+	\theta_{t+1} &= \theta_t - \frac{x - \theta^2}{2\theta}\\
+	&= \theta_t - \frac{f(\theta)}{\grad{f}{\theta}}
+\end{align}
+\noindent which can be defined for any differentiable $f$,
+so long as $\grad{f}{\theta}\neq 0$.
+In this form, it is known as the \emph{Newton method}
+or as \emph{Newton-Raphson}.
+This is an interesting example of Stigler's law of eponymy%
+~\cite{stigler1980}:
+Thomas Simpson was the first to notice that
+this algorithm could be generalized using calculus,
+in 1740.
+However, in part because Isaac Newton had developed an
+algebraic version of the method
+for generic polynomials and Joseph Raphson had refined it,
+Joseph Fourier, Carl Runge, and other
+prominent mathematicians mistakenly credited them with the technique.
+See~\cite{kollerstrom1992} for details.
+
+In the case of critical point-finding,
+the equivalent of $f$ is a vector and already a gradient,
+and so $\nabla f$ becomes the Hessian matrix
+and the scalar division becomes multiplication by an inverse matrix.
+The resulting algorithm is as follows:
 
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
     $T\in \N$, $\theta_0 \in \R^N$,
     $\nabla{f}\from\R^N\to\R^N$,
-    $\nabla^2{f}\from\R^N\to\R^{N\times N}$\
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$\\
     $t \leftarrow 0$\\
     \While{$t < T$}{%
 	$g \leftarrow \nabla{f}\left(\theta_t\right)$\\
@@ -217,6 +388,81 @@ This $\theta$ is a member of $\Theta^L_{\ecp}$,
     \algolabel{newton}
     \caption{Newton-Raphson}
 \end{algorithm}
+
+While the problem setup here was for equation solving,
+this algorithm, in particular under the name Newton's method,
+is better known as an optimization algorithm.
+It works as such for the same reason that gradient descent
+can be a global optimizer on smooth convex functions:
+whenever all of the stationary points
+are also global optima,
+an algorithm for finding stationary points is also
+an optimization algorithm.
+
+Unlike gradient descent,
+it is a second-order algorithm:
+in addition to a gradient function, $\nabla f$,
+it also needs a Hessian function, $\nabla^2 f$.
+The standard way of deriving it first shows
+that this is the best method possible for functions
+with constant Hessian.
+
+\begin{theorem}{Optimality of Newton Step}{newton}
+	\emph{Let $f$ be a twice-differentiable function
+	from $\Theta$ to $\R$
+	with constant, non-singular Hessian function.
+	From any point $\theta$, a point $\theta^\star$
+	that solves the gradient equations~\ref{eq:gradienteqns}
+	for $f$ can be obtained by computing
+	\begin{equation}
+		\theta^\star = \theta - \inv{\hess{f}{\theta}}\grad{f}{\theta}
+	\end{equation}}
+
+	The value of the gradient at a point $\theta + p$
+	can be approximated by applying
+	the Hessian at $\theta$ to $p$:
+	\begin{equation}
+		\grad{f}{\theta + p} = \grad{f}{\theta} + \hess{f}{\theta}p + o(p)
+	\end{equation}
+	\noindent By Taylor's theorem,
+	$o(p)$ is governed by the integral of the third derivative
+	of $f$ evaluated from $p$ to $\theta$.
+	But the Hessian is constant, and so the third derivative is a
+	zero tensor and	$o(p)$ can be replaced with $0$:
+	\begin{equation}
+		\grad{f}{\theta + p} = \grad{f}{\theta} + \hess{f}{\theta}p
+	\end{equation}
+
+	To solve the gradient equations,
+	we need the right-hand side here to be equal to 0.
+	Denoting the solution $p^\star$, we find that
+	\begin{align}
+		0 &= \grad{f}{\theta} + \hess{f}{\theta}p^\star
+		-\inv{\hess{f}{\theta}\grad{f}{\theta}} = p^\star
+	\end{align}
+	\noindent from which the claim follows,
+	where $\theta^\star = \theta + p^\star$.
+\end{theorem}
+
+We call the value $p^\star$ the \emph{pure Newton step}
+or the \emph{exact Newton step}.
+
+For functions with non-constant Hessian,
+i.e.~those which cannot be represented by a degree two polynomial,
+this argument doesn't hold.
+However, it holds approximately for functions whose Hessian
+doesn't change too quickly.
+In fact, the rate of convergence for this algorithm,
+once the norm of $p$ is sufficiently small,
+is quadratic:
+for each iteration, the number of bits of precision doubles%
+\footnote{In terms of the error, this is much faster than quadratic:
+it is squared exponential.}.
+This is to be contrasted with gradient descent,
+which has at best linear improvement:
+with each iteration, the number of bits of precision increases by a fixed amount%
+\footnote{Again, in terms of the error, this is much faster:
+it is exponential.}.
 
 \subsubsection{Pseudo-Inverse Newton}\sectionlabel{pseudoinverse}
 
