@@ -166,11 +166,57 @@ This $\theta$ is a member of $\Theta^L_{\ecp}$,
 
 \subsection{Gradient Norm Minimization}\sectionlabel{gnm}
 
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $\alpha \in \R_{>0}$, $\theta_0 \in \R^N$,
+    $\nabla{f}\from\R^N\to\R^N$,
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	$g \leftarrow \nabla{f}\left(\theta_t\right)$\\
+	$H \leftarrow \nabla^2{f}\left(\theta_t\right)$\\
+	$\theta_{t+1} \leftarrow \theta_t - \alpha Hg$\\
+	$t \leftarrow t + 1$
+    }%
+    \algolabel{gnm}
+    \caption{Gradient Norm Minimization}
+\end{algorithm}
+
 \subsection{Exact Newton Methods}\sectionlabel{exact}
 
 \subsubsection{The Babylonian Algorithm}\sectionlabel{babylon}
 
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $x, \theta_0 \in \R_{> 0}^2$\ \\
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	    $\theta_{t+1} \leftarrow \frac{\theta_t}{2} + \frac{x \div \theta_t}{2}$
+    }%
+    \algolabel{babylon}
+    \caption{Babylonian Algorithm for Square Roots}
+\end{algorithm}
+
 \subsubsection{Newton-Raphson}\sectionlabel{newton}
+
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $\theta_0 \in \R^N$,
+    $\nabla{f}\from\R^N\to\R^N$,
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$\
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	$g \leftarrow \nabla{f}\left(\theta_t\right)$\\
+	$H \leftarrow \nabla^2{f}\left(\theta_t\right)$\\
+	$\theta_{t+1} \leftarrow \theta_t - \inv{H}g$\\
+	$t \leftarrow t + 1$
+    }%
+    \algolabel{newton}
+    \caption{Newton-Raphson}
+\end{algorithm}
 
 \subsubsection{Pseudo-Inverse Newton}\sectionlabel{pseudoinverse}
 
@@ -178,11 +224,88 @@ This $\theta$ is a member of $\Theta^L_{\ecp}$,
 
 \subsubsection{Optimization Approach to Division}\sectionlabel{div}
 
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $x, \theta_0 \in \R^2$\ \\
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	    $\theta_{t+1} \leftarrow \theta_t \times \left(2 - \theta_t \times x\right)$
+    }%
+    \algolabel{newtondiv}
+    \caption{Newton Method for Division}
+\end{algorithm}
+
 \subsection{Practical Newton Methods}\sectionlabel{practical}
 
 \subsubsection{Damped Newton}\sectionlabel{damped}
 
 \subsubsection{Guarded Newton}\sectionlabel{guarded}
+
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $\nabla f\from\R^N\to\R^N$,
+    $p \in \R^N$,
+    $\theta \in \R^N$,
+    $\alpha \in \intervaloc{0}{1}$,
+    $\beta \in (0, 1)$,
+    $\rho \in (0, 1)$,
+    $\rho^\prime \in (0, 1)$
+    \DontPrintSemicolon
+    \SetKwFunction{FCheck}{CheckConvergence}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\FCheck{$\alpha, \rho$}}{%
+        $\theta^\prime \leftarrow \theta + \alpha p$\;
+        $s, s^\prime \leftarrow \sumsq{\grad{f}{\theta}} \sumsq{\grad{f}{\theta^\prime}}$\;
+        $\Delta \leftarrow 2 \rho \alpha \cdot p^\top H \grad{f}{\theta}$\;
+        \KwRet $s^\prime \leq s + \Delta$\;}
+    \;
+    converged $\leftarrow \texttt{CheckConvergence}\left(
+    	1, \rho^\prime\right)$\;
+    \If{$\mathrm{converged}$}{$\alpha \leftarrow 1$}
+    \While{$\mathrm{not\ converged}$}{%
+        converged $\leftarrow \texttt{CheckConvergence}\left(
+            \alpha, \rho\right)$\;
+        \If{$\mathrm{not\ converged}$}{$\alpha \leftarrow \beta \alpha$\;
+        \If{$\alpha == 0$}{\textbf{break}}}
+    }
+    $\KwRet\ \alpha$
+    \algolabel{roosta-btls}
+    \caption{Backtracking Line Search for Newton-MR}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $\theta_0 \in \R^N$,
+    $f\from\R^N\to\R$,
+    $\nabla{f}\from\R^N\to\R^N$,
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$,\
+    $T\in \N$,\\
+    $\texttt{maxit} \in \N$,
+    $\texttt{maxxnorm} \in \R$,
+    $\texttt{rtol} \in \R$,
+    $\texttt{acondlim} \in \R$,
+    $\alpha \in \intervaloc{0}{1}$,
+    $\beta \in (0, 1)$,
+    $\rho \in (0, 1)$,
+    $\rho^\prime \in (0, 1)$
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+        $g \leftarrow \nabla{f}\left(\theta_t\right)$\\
+        $H \leftarrow \nabla^2{f}\left(\theta_t\right)$\\
+        $p \leftarrow \texttt{MRQLP}\left(
+            H,\ -g,\ \texttt{maxit},\ \texttt{maxxnorm},\ \texttt{rtol},\ \texttt{acondlim}\right)$\\
+        $\alpha \leftarrow \texttt{BTLS}\left(
+            \nabla f, p, \theta_t, \alpha, \beta, \rho, \rho^\prime\right)$\\
+        $\theta_{t+1} \leftarrow \theta_t + \alpha p$\\
+	\If{$\theta_{t+1} == \theta_{t}$}{\textbf{break}}
+        $t \leftarrow t + 1$
+    }%
+    \algolabel{nmr}
+    \caption{Newton-MR}
+\end{algorithm}
 
 \section{Verifying Critical Point-Finding Algorithms}\sectionlabel{verify}
 
@@ -191,7 +314,5 @@ This $\theta$ is a member of $\Theta^L_{\ecp}$,
 \subsection{The Deep Linear Auto-Encoder}\sectionlabel{dlae}
 
 \onlyinsubfile{\printbibliography}
-
-
 
 \end{document}
