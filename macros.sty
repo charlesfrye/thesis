@@ -198,7 +198,6 @@
 \newcommand{\Mid}{\ensuremath{~\Big|~}}
 \newcommand{\tr}{\mathrm{tr}}
 \newcommand{\trans}{\top}
-\newcommand{\pinv}{\dagger}
 \newcommand{\iprod}[1]{\langle#1\rangle}
 \newcommand{\isqur}[1]{\langle#1,#1\rangle}
 \newcommand{\trsp}[1]{#1^\trans}
@@ -232,6 +231,10 @@
 % Indicator function
 \newcommand{\Ind}{\mathbb{I}}
 
+% Hyphen in math mode
+\mathchardef\mhyphen="2D
+
+
 % common abbrevs
 \newcommand{\ignore}[1]{}
 \newcommand{\OPT}{\mathrm{OPT}}
@@ -246,8 +249,11 @@
 \newcommand{\nuc}{\mathrm{nuc}}
 \newcommand{\op}{\mathrm{op}}
 \newcommand{\cp}{\mathrm{cp}}
+\newcommand{\ecp}{\eps\mhyphen\cp}
 \newcommand{\lm}{\mathrm{lm}}
 \newcommand{\ReLU}{\mathrm{ReLU}}
+\newcommand{\inv}[1]{#1^{-1}}
+\newcommand{\pinv}[1]{#1^{+}}
 
 % distributions
 \newcommand{\Normal}{\mathrm{Normal}}
