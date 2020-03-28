@@ -46,7 +46,7 @@ and based on an analogy between a physical system minimizing its energy
 and a machine learning system maximizing its performance.
 Conceptually, the goal is to characterize all of the configurations
 in which the system is stable,
-the \emph{critical points} or \emph{stationary points}
+the \emph{critical points} or stationary points
 of the system.
 The details of this problem setup are the substance
 of the remainder of this chapter.
@@ -65,6 +65,8 @@ In general, they can't be derived or written in elementary mathematical terms,
 and so need to be discovered numerically,
 just as highly-performant neural networks have their parameters set
 by numerical algorithms rather than by analytical derivations.
+\chapterref{two} is a didactic survey of algorithms
+for finding critical points.
 Our early attempts to reproduce the results
 in~\cite{dauphin2014} and~\cite{pennington2017}
 appeared to be failures.
@@ -74,7 +76,7 @@ stubbornly refused to decrease.
 
 The algorithms used to find critical points are complicated ---
 both in terms of their implementation and in terms of the number of knobs
-to twiddle to configure them, or \emph{hyperparameters} ---
+to twiddle to configure them, or hyperparameters ---
 and they behave quite differently from typical machine learning algorithms.
 We had implemented these algorithms ourselves,
 due to the absence, at the beginning of this research project,
@@ -85,8 +87,6 @@ or weren't configuring them properly.
 
 As it turned out, both of those hypotheses were correct,
 but verifying them turned out to be a research project in itself.
-The process of implementing, debugging, and tuning these algorithms
-is explained in \chapterref{two}.
 The key innovation was the introduction of the \emph{deep linear autoencoder}
 as a test problem.
 For this very special neural network,
@@ -97,6 +97,7 @@ we can check the work of our algorithms.
 These results were written up for the arXiV
 in~\cite{frye2019}
 and rejected from ICML2019.
+They form the first part of~\chapterref{three}.
 
 Unfortunately, the process of debugging and tuning critical point-finding
 algorithms on the deep linear autoencoder did not solve
@@ -118,7 +119,9 @@ and, on reviewing the outputs of our critical point-finding algorithms
 when applied to neural networks,
 we observed it ubiquitously.
 The concept of, evidence for, and consequences of gradient-flatness
-in neural networks is the focus of \chapterref{three}.
+in neural networks are the focus of the second part of \chapterref{three}.
+These results were written up separately for the arXiV
+in~\cite{frye2020}.
 
 The biggest take-home message of our observations for the field
 is that the famous results
@@ -145,7 +148,8 @@ with (optionally parameterized) non-linear transformations.
 In order to be able to apply calculus
 to our networks, we will assume that
 the parameters are stored in a vector, $\theta$,
-and converted into a function by a network constructor $\mathrm{NN}$:
+and converted into a function by a network constructor
+$\mathrm{NN}$:
 \begin{equation}
 	\mathrm{NN}(\theta) \from \cX \to \cY
 \end{equation}
@@ -156,7 +160,7 @@ In supervised learning, a collection of inputs $X$ and targets $Y$
 are provided, and the goal is to find a function from $\cX$ to $\cY$
 such that the value of some cost function $c$ is low, on average, when applied to
 pairs of targets and their matching inputs after being passed through the network.
-Optionally, certain parameters may be considered more \enquote{costly}
+Optionally, certain parameter values may be considered more \enquote{costly}
 than others, and this is enforced by a regularizer $r$
 that is added to the cost.
 The result is called the \emph{loss function}
@@ -185,7 +189,7 @@ and applies a non-linear function $\sigma$
 after applying each in turn:
 
 \begin{equation}
-	\mathrm{NN}\left(W_1, \dots W_{k-1}, W_k\right) = W_k \sigma \circ W_{k-1} \sigma \circ \dots \sigma \circ W_1
+	\mathrm{NN}\left(W_1, \dots W_{k-1}, W_k\right) = W_k \after \sigma \after W_{k-1} \after \sigma \after \dots \sigma \after \circ W_1
 \end{equation}
 
 \begin{table}[h]
@@ -194,14 +198,20 @@ after applying each in turn:
 			\textbf{Name}       & \textbf{Type}                          \\
 			Inputs              & $X \from \cX^n \defeq \R^{m\times n}$  \\
 			Targets, Outputs    & $Y \from \cY^n \defeq \R^{p\times n}$  \\
-			Parameters          & $\theta \from \Theta \iso \R^N$        \\
+			Parameters          & $\theta \from \Theta \cong \R^N$        \\
 			Loss Function       & $L \from \Theta \to \R$                \\
 			Network Constructor & $\mathrm{NN} \from \Theta \to \cY^\cX$ \\
 			Cost Function       & $c \from \cY \times \cY \to \R$        \\
 			Regularizer         & $r \from \Theta \to \R$
 		\end{tabular}
 	\end{center}
-	\caption{\textbf{Definitions of Terms and Symbols for Neural Network Loss Functions}.}
+	\caption{\textbf{Definitions of Terms and Symbols for Neural Network Loss Functions}.}{%
+		The \enquote{type} of an object is either set of which it is an element
+		or, for a function, the types of its inputs and outputs,
+		denoted by $\from$ the input type $\to$ the output type.
+		The symbol $\cY^{\cX}$
+		denotes the set of all functions from the domain $\cX$ to $\cY$.
+	}
 	\tablelabel{loss-notation}
 \end{table}
 
@@ -244,6 +254,8 @@ which satisfies the following relation:
 	The values returned by this function are called \emph{gradients}
 	or \emph{gradient vectors}.
 \end{definition}
+\noindent If a method only uses the function and the gradient,
+we call it a \emph{first-order} method.
 
 The gradient at a point $\theta$ is a vector that can be used
 as a linear functional applied to a perturbation $\eps$ that approximates
@@ -278,9 +290,9 @@ is known as \emph{gradient descent}.
 	\caption{Gradient Descent}
 \end{algorithm}
 \ \\
-This method,
-and its stochastic and accelerated variants,
-has some hope of working on smooth functions because
+This method
+and its stochastic and accelerated variants
+have some hope of working on smooth functions because
 whenever the parameter is a minimizer,
 the gradient
 is $0$:
@@ -305,7 +317,9 @@ was that training them was difficult.
 Nowadays, however,
 it is recognized that training large neural networks
 with gradient-based methods
-is actually quite easy~\cite{sun2019}.
+is actually quite easy,
+in that many problems can be avoided with
+a few generic tricks~\cite{sun2019}.
 One key hypothesis as to why is the
 no-bad-local-minima theory.
 To understand it,
@@ -357,8 +371,8 @@ See~\figureref{convex-vs-nonconvex}.
 	\caption{\textbf{The Critical Points and Global Minima
 	of a Convex and a Non-Convex Function}}{\textbf{A}:
 	The convex function $L(\theta) = \theta^2$ (black)
-	and its critical points (blue)
-	and minimizers (gold outline).
+	and its critical points (gold)
+	and minimizers (blue outline).
 	\textbf{B}:
 	Same as in \emph{A}, but for the non-convex function
 	$L(\theta) = \cos(\theta) + \theta +\theta^2$.}
@@ -383,7 +397,9 @@ from \enquote{if-then} to
 
 \begin{equation}\equationlabel{convexity-critical}
 	L \text{\ smooth, convex\ } \Rightarrow\\
-	\theta \in \argmin_{\theta \in \Theta} L(\theta) \Leftrightarrow \grad{L}{\theta} = 0 \Leftrightarrow \theta \in \Theta_{\cp}
+	\theta \in \argmin_{\theta \in \Theta} L(\theta)
+	\Leftrightarrow \grad{L}{\theta} = 0
+	\Leftrightarrow \theta \in \Theta_{\cp}
 \end{equation}
 
 Another way to characterize smooth convex functions is through their Hessian function.
@@ -393,10 +409,9 @@ The Hessian function returns matrices that satisfy the relation below:
 	is a function $\nabla^2{L} \from \Theta \to \R^{N\times N}$,
 	where $N$ is the dimensionality of $\Theta$,
 	that satisfies
-	\begin{align}
-		&\nabla^2{L}\from \Theta \to \R^{N\times N}\\
-		&\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)\equationlabel{def-hessian}
-	\end{align}
+	\begin{equation}\equationlabel{def-hessian}
+		\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)
+	\end{equation}
 	for all $\theta, \eps \in \Theta$.
 	The matrices returned by this function are called \emph{Hessians}
 	or \emph{Hessian matrices}.
@@ -417,12 +432,14 @@ of the original function $L$:
 \end{equation}
 
 Note that the Hessian appears in~\equationref{taylor-two}
-as a quadratic form:
+as a \emph{quadratic form}:
 a symmetric matrix pre- and post-multiplied with the same vector.
 Quadratic forms are classified,
 up to a change of basis, by the eigenvalue spectrum
 of the underlying matrix:
-the number of positive, negative, and 0 eigenvalues.
+the number of positive, negative, and 0 eigenvalues\footnote{%
+Because the matrices are real and symmetric,
+there are no complex eigenvalues.}.
 
 Smooth convex functions are precisely those functions whose
 Hessian matrix has no negative eigenvalues at any
@@ -494,8 +511,7 @@ i.e.~elements of the $\argmin$:
 	f\from\Omega\to\R \text{\ smooth, convex\ }
 	\Rightarrow \Omega_{\lm} = \argmin_{\Omega} f = \Omega_{\cp}
 \end{equation}
-
-From this, we can deduce
+\noindent From this, we can deduce
 that any algorithm that converges to a generic critical point will converge,
 on smooth convex functions, to a minimizer.
 
@@ -507,7 +523,7 @@ $\Theta_{\cp} \supset \Theta_{\lm}$.
 Does gradient descent converge to non-minimizing critical points,
 or only to local minimizers?
 
-As above, we can classify critical points according to the
+We can classify critical points according to the
 eigenvalue spectrum of their associated Hessian.
 The fraction of negative eigenvalues is known as the
 \emph{index} of the critical point.
@@ -560,7 +576,8 @@ and can be accelerated via momentum~\cite{jin2018b}.
 	the mean squared error cost function
 	and no regularization
 	for a linear autoencoder network
-	with one dimensional inputs.
+	with one-dimensional inputs
+	and a one-dimensional hidden layer.
 	\\ \ \\
 	The function is not convex,
 	because the gradient
@@ -622,7 +639,7 @@ we will say that the function has the
 \emph{no-bad-local-minima property},
 or the NBLM property.
 While~\exampleref{1ddlae} has the NBLM property,
-the function in panel B of~\figref{convex-vs-nonconvex}
+the function in panel B of~\figureref{convex-vs-nonconvex}
 does not, due to the presence of a non-global local minimum.
 We will refer to the hypothesis that
 the loss functions of large neural networks
@@ -671,9 +688,13 @@ With most random variables,
 discussion can proceed directly from writing down a density.
 But with random functions,
 the situation is more complicated,
-because it is difficult to condsider densities and integrals over
+because it is difficult to consider densities and integrals over
 the space of functions.
-This necessitates a somewhat strange definition for the Gaussian random field.
+In addition to necessitating that we typically visualize random functions
+by looking at a single example
+(and hoping that any properties we notice are \enquote{typical}),
+rather than drawing a histogram or density,
+this necessitates a somewhat strange definition for the Gaussian random field.
 The definition is clearer if we first introduce an analogous definition
 for multivariate Gaussian random variables.
 
@@ -698,7 +719,8 @@ have the same property.
 	for all $w\in\R^n, x_i \in\R^k$.
 \end{definition}
 Here $f^{\otimes n}$ is the $n$-fold product of the function $f$,
-which applies the function $f$ to $n$ separate inputs.
+which applies the function $f$ to $n$ separate inputs,
+returning $n$ outputs.
 
 There is one example of a Gaussian random field
 that is familiar to machine learning practitioners:
@@ -736,16 +758,15 @@ Usefully, a Gaussian random field can be defined in terms of its
 mean function
 $\mu\from\R^k\to\R$
 and covariance function, or kernel,
-$K\from\R^k\times\R^k\to\R^\k$.
-So long as the kernel $K$ falls off
-sufficiently quickly with the distance
-between its two arguments,
+$K\from\R^k\times\R^k\to\R^\k$,
+which must be positive semi-definite.
+For many choices of kernel,
 the field is smooth
 (and its partial derivatives are also Gaussian random fields).
 See \figureref{2dgrf},
 which depicts a single draw from the ensemble of smooth
-Gaussian random fields with a squared exponential,
-or Gaussian kernel.
+Gaussian random fields with a particular squared exponential,
+or Gaussian, kernel.
 Notice that it has local minima, saddles, and maxima.
 If we are to use this ensemble as a model of neural network losses
 that can explain their optimizability,
@@ -783,14 +804,8 @@ all of the critical points will be minima.
 Furthermore,
 the minima, including the global minima,
 will have approximately the same loss.
-
 This is an effective restatement
 of the no-bad-local-minima property.
-While it drops the requirement that all local minima are
-exact global minima,
-it retains their \enquote{effective} optimality,
-in that the local minima are \emph{almost} as good
-as the global minima.
 
 One benefit of this model is that it
 applies only to high-dimensional loss functions.
@@ -834,12 +849,12 @@ including proofs of the statements below regarding spectra,
 see~\cite{feier2012,tao2012}.
 
 The eigenvalues of random matrices enjoy a similar phenomenon
-to the law of large numbers for averages of random variables:
+to the Central Limit Theorem for sums of random variables:
 when the right independence assumption is made,
 the details of the random variables don't matter,
-and the result converges to a deterministic limit.
+and the result has a stereotypical distribution.
 For averages of random variables,
-that deterministic limit is the expectation.
+that stereotypical distribution is the Gaussian.
 For eigenvalues of random matrices,
 it is the Wigner semi-circle distribution.
 
@@ -946,9 +961,13 @@ and the matrices almost surely have inverses.
 	\begin{equation}\equationlabel{def-coker}
 		\co\ker M \defeq \Set{v \in \R^n \suchthat Mv \neq 0} \cup \Set{0}
 	\end{equation}
+	These two subspaces are \emph{complementary}:
+	their union is $\R^n$
+	and their dimensions add up to $n$.
 	The \emph{rank} of $M$, $\rk M$,
 	is equal to the dimension of $\co\ker M$.
-	A square matrix with rank less than the maximum
+	A matrix with rank less than the minimum
+	of its input and output dimension
 	is said to have \emph{low rank}.
 \end{definition}
 
@@ -959,12 +978,12 @@ along with some eigenvalues at much larger values,
 with fewer and lower magnitude negative eigenvalues.
 Furthermore, the low-rank structure of the Hessian matrix
 can be read off from the clear patterns in the values,
-unlike the clearly independent values
+unlike the clearly independent (aside from symmetry) values
 in the matrix in~\figureref{wigner-rm}.
 
 There is an alternative random matrix ensemble
-that produces matrices of this type:
-the Wishart random matrices.
+that has some of these properties:
+the Wishart random matrix ensemble.
 
 \begin{definition}{Wishart Random Matrix}{wishart}
 	A random square $n\times n$ matrix $M$ is \emph{Wishart}
@@ -978,7 +997,7 @@ the Wishart random matrices.
 		X_{ij} \sim \Normal\left(0, 1/k\right)
 	\end{align}
 	It is the sample covariance matrix of a $k$-element sample
-	of an $n$-dimensional Gaussian vector with
+	of an $n$-dimensional Gaussian random vector with
 	iid components.
 \end{definition}
 
@@ -1094,7 +1113,7 @@ it is not without its flaws.
 First, the approach based on critical points
 and smooth Gaussian random fields fails
 in the case of non-smooth activations or cost functions.
-The popular \emph{ReLU} activation function,
+The popular $\ReLU$ activation function,
 $\ReLU\left(x\right) = \max(x, 0)$,
 is non-smooth because it is not differentiable at $0$,
 as is the \emph{hinge} cost function for binary classification,
@@ -1163,7 +1182,7 @@ of the initial point.
 
 The alternative method to
 demonstrate the convergence of gradient-based methods
-on neural network losses it to prove it directly,
+on neural network losses is to prove it directly,
 rather than relying on generic optimization proofs
 by demonstrating that the loss function falls in some
 privileged class.
@@ -1205,7 +1224,7 @@ For example, one of the polynomial terms for the width in~\cite{du2018},
 which is applied to the number of samples, has degree $4$.
 For the MNIST dataset~\cite{lecun2010},
 which has 6e4 examples,
-this implies a minimum width more than 1e19 neurons,
+this implies a minimum width of more than 1e19 neurons,
 up to linear factors.
 The same parameter in~\cite{allenzhu2018} has degree $30$.
 Another term in~\cite{du2018}, $\lambda_{\min}$,
@@ -1263,12 +1282,13 @@ Neural networks are, in many cases,
 easily trained to approximate global minima
 from random initializations.
 This suggests that their loss functions may have
-an (effective) no-bad-local-minima property:
-all local minima are (nearly) global minima.
+a no-bad-local-minima property:
+all local minima are nearly global minima.
 This NBLM property is shared by a large class of random functions,
 the Gaussian random fields~\cite{bray2007,dauphin2014}.
 Though the typical Wigner and Wishart ensembles of random matrices
 are not sufficient alone to model neural network loss functions,
+even qualitatively,
 an ensemble derived by mixing them is~\cite{pennington2017}.
 
 However, analytical results~\cite{ding2019}
