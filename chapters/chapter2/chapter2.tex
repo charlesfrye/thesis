@@ -3,9 +3,9 @@
 % chktex-file 18
 \begin{document}
 
-\chapter{Verifying
+\chapter{%
 Critical Point-Finding Algorithms
-with the Deep Linear Autoencoder}\chapterlabel{two}
+}\chapterlabel{two}
 \onlyinsubfile{\begin{KeepFromToc}
 		\tableofcontents
 		\clearpage
@@ -18,29 +18,16 @@ with the Deep Linear Autoencoder}\chapterlabel{two}
 \section{Chapter Summary}\sectionlabel{summary}
 
 In this chapter,
-we define multiple algorithms for finding critical points:
+we define two classes of algorithms for finding critical points:
 gradient norm minimization
-and a wide variety of Newton methods
-(\sectionref{algo}).
-Then, in \sectionref{verify},
-we demonstrate the behavior of these algorithms
-on several simple neural networks.
-First, as a warm up,
-we cover multiple linear and logistic regression
-(\sectionref{linear}).
-Then, we apply these algorithms to a more realistic,
-but still linear and so tractable network:
-a deep linear auto-encoder.
-This example, which is
-a generalization of \exampleref{1ddlae},
-is closely connected to principal components analysis.
-It is used to draw lessons useful
-for finding the critical points of non-linear networks,
-the subject of \chapterref{three}.
+and Newton methods.
+All of these examples are
+numerical, iterative methods
+based on linear approximations of the gradient function
+given by the Hessian function.
+We refer to them as \emph{second-order}
+critical point-finding algorithms
 
-\section{Algorithms for Finding Critical Points}\sectionlabel{algo}
-
-Importantly, we restrict ourselves to numerical approaches.
 While the analytical critical points exactly satisfy
 the analytical system of (possibly non-linear) equations
 \begin{equation}\equationlabel{gradienteqns}
@@ -75,7 +62,7 @@ between finding critical points of complicated loss functions
 and a fundamental arithmetic operation: taking the square root.
 
 The lessons of this analogy are used to motivate
-each of three algorithms in turn:
+each of three algorithm classes in turn:
 gradient norm minimization (\sectionref{gnm}),
 exact Newton methods (\sectionref{exact}),
 and inexact Newton methods (\sectionref{inexact}).
@@ -84,7 +71,7 @@ for high-dimensional problems
 require additional tricks,
 which are reviewed in \sectionref{practical}.
 
-\subsection{Optimization Approach to Taking Square Roots}\sectionlabel{sqrt}
+\section{Optimization Approach to Taking Square Roots}\sectionlabel{sqrt}
 
 Addition ($+$) and multiplication ($\times$)
 are simple operations, in the following sense:
@@ -98,9 +85,10 @@ The symbols $a + b$ and $a \times b$ represent the exact, finite output
 of a concrete, finite-time algorithm.
 That is, both operations define closed monoids over
 binary strings of
-(importantly!) finite-length.
+(importantly!) finite length.
 
-This is not true of division ($\div$), inverse ($\inv{}$), or square root%
+This is not true of division ($\div$), inversion ($\inv{}$),
+taking the square root%
 \footnote{We take the type signature of $\sqrt$ to be
 $\sqrt{}\from\R_{\geq 0}\to\R_{\geq 0}$,
 i.e.~we do not allow non-real or negative square roots.}
@@ -165,11 +153,11 @@ is approximately $0$.
 This $\theta$ is a member of $\Theta^L_{\ecp}$,
 \defref{epscritical}.
 
-\subsection{Gradient Norm Minimization}\sectionlabel{gnm}
+\section{Gradient Norm Minimization}\sectionlabel{gnm}
 
 The simplest way to attack the problem
 of finding a point in
-\equationref{def-epscp} or \equationref{sqrteps}
+the sets defined by \equationref{def-epscp} or \equationref{sqrteps}
 is to apply a first-order optimization algorithm.
 In the case of critical point-finding,
 we define an auxiliary function $g$,
@@ -182,9 +170,9 @@ equal to half the squared gradient norm:
 This approach turns out to work poorly,
 so it is not widely disseminated enough to have a standard name.
 However, it is straightforward enough to be repeatedly discovered.
-The earliest use, to my knowledge,
+The earliest use, to the best of the author's knowledge,
 was in chemical physics~\cite{mciver1972},
-where the problem of finding saddles arises
+where the problem of finding saddle points arises
 when computing transition states of chemical reactions.
 They gave it the name \emph{gradient norm minimization},
 which we use here.
@@ -279,7 +267,7 @@ stochastic methods, momentum, adaptive gradients,
 and so on.
 This is in contrast to the Newton methods reviewed below.
 
-\subsection{Exact Newton Methods}\sectionlabel{exact}
+\section{Exact Newton Methods}\sectionlabel{exact}
 
 Gradient norm minimization does not take any advantage
 of the special structure of the problem,
@@ -298,7 +286,7 @@ we introduce extensions that make it feasible for
 problems with large dimension and higher-order nonlinearity,
 like many neural network loss functions.
 
-\subsubsection{The Babylonian Algorithm}\sectionlabel{babylon}
+\subsection{The Babylonian Algorithm}\sectionlabel{babylon}
 
 The very earliest form of Newton's method
 dates back perhaps to the 17th century BCE,
@@ -313,9 +301,8 @@ See~\cite{brown1999} for details.
 
 The intuition for this algorithm is geometric:
 if a square of area $x$
-is smaller than a square with sides of length $\theta$,
-then it is larger than the square with sides of length $x \div \theta$,
-or vice versa.
+is smaller (larger) than a square with sides of length $\theta$,
+then it is larger (smaller) than the square with sides of length $x \div \theta$.
 In either case, the square with sides equal in length to the average
 of $\theta$ and $x \div \theta$
 is closer in area to $x$.
@@ -340,7 +327,7 @@ This is also true of $\div$, which appears in \algoref{babylon}.
 We will come back to this in \sectionref{div},
 in order to better understand inexact Newton methods.
 
-\subsubsection{Newton-Raphson}\sectionlabel{newton}
+\subsection{Newton-Raphson}\sectionlabel{newton}
 
 If we define
 \begin{equation}
@@ -349,11 +336,11 @@ If we define
 \noindent then the update in \algoref{babylon}
 can be written
 \begin{align}
-	\theta_{t+1} &= \theta_t - \frac{x - \theta^2}{2\theta}\\
-	&= \theta_t - \frac{f(\theta)}{\grad{f}{\theta}}
+	\theta_{t+1} &= \theta_t - \frac{x - \theta_t^2}{2\theta_t}\\
+	&= \theta_t - \frac{f(\theta_t)}{\grad{f}{\theta_t}}
 \end{align}
 \noindent which can be defined for any differentiable $f$,
-so long as $\grad{f}{\theta}\neq 0$.
+so long as $\grad{f}{\theta_t}\neq 0$.
 In this form, it is known as the \emph{Newton method}
 or as \emph{Newton-Raphson}.
 This is an interesting example of Stigler's law of eponymy%
@@ -400,13 +387,15 @@ whenever all of the stationary points
 are also global optima,
 an algorithm for finding stationary points is also
 an optimization algorithm.
-
 Unlike gradient descent,
 it is a second-order algorithm:
 in addition to a gradient function, $\nabla f$,
 it also needs a Hessian function, $\nabla^2 f$.
-The standard way of deriving it first shows
-that this is the best method possible for functions
+
+In the absence of geometric intuition
+to explain why this is as sensible algorithm,
+we turn to calculus.
+First, we show that this is the best method possible for functions
 with constant Hessian.
 
 \begin{theorem}{Optimality of Newton Step}{newton}
@@ -439,8 +428,8 @@ with constant Hessian.
 	we need the right-hand side here to be equal to 0.
 	Denoting the solution $p^\star$, we find that
 	\begin{align}
-		0 &= \grad{f}{\theta} + \hess{f}{\theta}p^\star
-		-\inv{\hess{f}{\theta}\grad{f}{\theta}} = p^\star
+		0 &= \grad{f}{\theta} + \hess{f}{\theta}p^\star\\
+		-\inv{\hess{f}{\theta}}\grad{f}{\theta} = p^\star
 	\end{align}
 	\noindent from which the claim follows,
 	where $\theta^\star = \theta + p^\star$.
@@ -473,7 +462,7 @@ with each iteration, the number of bits of precision increases by a fixed amount
 \footnote{Again, in terms of the error, this is much faster:
 it is exponential.}.
 
-\subsubsection{Pseudo-Inverse Newton}\sectionlabel{pseudoinverse}
+\subsection{Pseudo-Inverse Newton}\sectionlabel{pseudoinverse}
 
 In defining the Babylonian algorithm,
 \algoref{babylon},
@@ -494,7 +483,8 @@ was that it solved the Newton system
 \end{equation}
 \noindent which has a solution whenever $-\grad{f}{\theta}$
 is in the image of $\hess{f}{\theta}$,
-the linear subspace of possible outputs of $\hess{f}{\theta}$.
+the linear subspace of possible outputs of $\hess{f}{\theta}$,
+defined below.
 
 \begin{definition}{Image and Co-Image of a Matrix}{image}
 	For a matrix $M$ in $\R^{m \times n}$,
@@ -520,6 +510,11 @@ We will need several properties
 of this matrix later,
 so we do this in detail.
 
+\subsubsection{Pseudo-Inverses and the Singular Value Decomposition}
+
+The singular value decomposition of a matrix
+breaks down a matrix into the product,
+or composition, of three matrices.
 \begin{definition}{Singular Value Decomposition}{svd}
 	For a matrix $M$ in $\R^{m \times n}$
 	with rank $r$,
@@ -558,9 +553,9 @@ but it is more appropriately set in terms of morphisms.
 	      f = i \after b \after s
 	\end{equation}
 	where $s\from A \onto A/\sim$ is a surjection,
-	$b\from A/\sim \iso \im A$ is a bijection, and
+	$b\from A/\sim \to \im A$ is a bijection, and
 	$i\from \im A \into B$ is an injection
-	(indicated by arrow type).
+	(surjectivty and injectivity indicated by arrow type).
 	The elements of the equivalence relation $\sim$
 	are given by pairs $(a, a^\prime) \in A \times A$
 	where $f(a) = f(a^\prime)$.}
@@ -575,6 +570,15 @@ that picks the output corresponding to each class of input;
 and an into mapping, or injection,
 that inserts this output into the target set.
 
+Though this decomposition is of limited use
+for generic functions,
+as opposed to structure-preserving functions
+like group homomorphisms
+or linear maps,
+it is fruitful to consider a concrete example
+from the world of generic functions
+before connecting to the SVD.\@
+
 \begin{example}{Decomposition of \texttt{is\_odd}}{isodd}
 	Consider the function $\texttt{is\_odd}\from \N \to \cS$,
 	where $\cS$ is the set of all strings in the English alphabet,
@@ -584,7 +588,7 @@ that inserts this output into the target set.
 	\begin{equation}
 		\texttt{is\_odd} = \texttt{to\_string} \after \texttt{to\_bool} \after {\%}_2
 	\end{equation}
-	where $\%_2\from\N \to \Set{0, 1}$
+	where $\%_2\from\N \onto \Set{0, 1}$
 	computes the value mod $2$ and
 	\begin{equation*}
 		\texttt{to\_string}(b) = %chktex 36
@@ -598,7 +602,7 @@ that inserts this output into the target set.
 			     \top  & 	\text{if } k = 1
 			\end{cases}
 	\end{equation*}
-	This is summarized neatly by the diagram below:
+	This is summarized neatly by the commutative diagram below:
 	\begin{center}
 	    \begin{tikzcd}
 		    \N \arrow[rr, "\texttt{is\_odd}"] \arrow[dd, "\%_2", two heads]
@@ -608,6 +612,9 @@ that inserts this output into the target set.
 		&  & \mathbb{B} \arrow[uu, "\texttt{to\_string}", harpoon, hook]
 	    \end{tikzcd}
 	\end{center}
+	Saying that this diagram \emph{commutes}
+	is saying that any path from one domain to another
+	results in the same function.
 \end{example}
 
 Now, let us view the SVD through this lens.
@@ -626,7 +633,8 @@ If we take $0$ to be the representative of that equivalence class,
 the target of the surjection becomes the co-kernel of M
 (recall \defref{kernel}).
 The target of the bijection is the image of M.
-This set of relationships is summarized below.
+This set of relationships is summarized
+in the commutative diagram below.
 
 \begin{center}
     \begin{tikzcd}
@@ -668,17 +676,20 @@ then extend it for all matrices by means of the SVD.\@
 	\end{align}
 	This is sometimes known as the Moore-Penrose pseudo-inverse.
 	The relationships between these matrices
-	are summarized by the diagram below.
+	are summarized by the commutative diagram below.
 	\begin{center}
 	    \begin{tikzcd}
-		    \R^n \arrow[rr, "M", bend left] \arrow[dd, "V^\top", two heads, bend right]
-		    &  & \R^m \arrow[dd, "U^\top", two heads, bend right] \arrow[ll, "M^+", dotted, bend left]                       \\
+		    \R^n \arrow[rr, "M", bend left] \arrow[dd, "V^\top", swap, two heads, bend right]
+		    &  & \R^m \arrow[dd, "U^\top", swap, two heads, bend right] \arrow[ll, "M^+", dotted, bend left]                       \\
 		\ & \  & \\
 		\co \ker M \arrow[uu, "V", harpoon, hook, bend right]  \arrow[rr, "\Sigma", bend right]
 		&  & \im M \arrow[uu, "U", harpoon, hook, bend right] \arrow[ll, "\inv{\Sigma}", bend right]
 	    \end{tikzcd}
 	\end{center}
 \end{definition}
+
+
+\subsubsection{Defining Pseudo-Inverse Newton}
 
 Let's return to the problem of solving
 \equationref{newtonsystem}
@@ -713,9 +724,9 @@ when the gradient is not in the image of the Hessian in \chapterref{three}.
 This will turn out to be critically important for understanding
 the behavior of Newton methods on neural network loss functions.
 
-\subsection{Inexact Newton Methods}\sectionlabel{inexact}
+\section{Inexact Newton Methods}\sectionlabel{inexact}
 
-\subsubsection{Optimization Approach to Division}\sectionlabel{div}
+\subsection{Optimization Approach to Division}\sectionlabel{div}
 
 \begin{algorithm}[H]
     \SetAlgoLined{}
@@ -729,11 +740,13 @@ the behavior of Newton methods on neural network loss functions.
     \caption{Newton Method for Division}
 \end{algorithm}
 
-\subsection{Practical Newton Methods}\sectionlabel{practical}
+\subsection{Linear Solvers for Inexact Newton}
 
-\subsubsection{Damped Newton}\sectionlabel{damped}
+\section{Practical Newton Methods}\sectionlabel{practical}
 
-\subsubsection{Guarded Newton}\sectionlabel{guarded}
+\subsection{Damped Newton}\sectionlabel{damped}
+
+\subsection{Guarded Newton}\sectionlabel{guarded}
 
 \begin{algorithm}[H]
     \SetAlgoLined{}
@@ -800,11 +813,6 @@ the behavior of Newton methods on neural network loss functions.
     \caption{Newton-MR}
 \end{algorithm}
 
-\section{Verifying Critical Point-Finding Algorithms}\sectionlabel{verify}
-
-\subsection{Linear and Logistic Regression}\sectionlabel{linear}
-
-\subsection{The Deep Linear Auto-Encoder}\sectionlabel{dlae}
 
 \onlyinsubfile{\printbibliography}
 
