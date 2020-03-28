@@ -199,7 +199,9 @@ and applies a non-linear function $\sigma$
 after applying each in turn:
 
 \begin{equation}
-	\mathrm{NN}\left(W_1, \dots W_{k-1}, W_k\right) = W_k \after \sigma \after W_{k-1} \after \sigma \after \dots \sigma \after \circ W_1
+	\mathrm{NN}\left(W_1, \dots W_{k-1}, W_k\right)
+	= W_k \after \sigma \after W_{k-1} \after \sigma \after
+	\dots \sigma \after W_1
 \end{equation}
 
 \begin{table}[h]
@@ -228,15 +230,11 @@ after applying each in turn:
 The process of \enquote{training} a neural network is the process
 of selecting a value of the parameters, $\theta^\star$, that minimizes the loss:
 \begin{equation}\equationlabel{minimize}
-	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta) \defeq \Theta^L_{\star}
+	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta)
 \end{equation}
 That is, we treat the process of inferring the best parameters for our network,
 the process of programming our machine-learned algorithm,
 as an optimization problem.
-An element of an $\argmin$ is known as a \emph{global minimum}.
-Finding global minima is generically a hard problem in the strictest sense,
-because almost any problem in mathematics can be formulated as an
-optimization problem.
 This is the \emph{variational approach},
 which is a ubiquitous method in mathematics%
 \footnote{E.g.~the Courant-Fischer-Weyl characterization of eigenvalues,
@@ -246,12 +244,16 @@ and even the universal construction approach in category theory~\cite{milewski20
 }.
 One might think of machine learning in general as
 a variational approach to programming computers.
+An element of an $\argmin$ is known as a \emph{global minimum}.
+Finding global minima is generically a hard problem in the strictest sense,
+precisely because almost any problem in mathematics can be formulated as an
+optimization problem.
 The variational approach is particularly useful
 when the resulting optimization problem
 has a fast solution algorithm.
 
 Almost all methods for optimizing neural networks
-are \emph{gradient-based}.
+are gradient-based.
 That is, they use the gradient function,
 which satisfies the following relation:
 
@@ -364,6 +366,8 @@ are also targets of convergence.
 If we initialize \algoref{gd} to one of these points
 ($\theta_{0} \in \Theta_{\cp}$),
 then for $\theta_t = \theta_0$ for all $t$.
+Therefore, if initialized from a critical point,
+the algorithm will converge to that critical point.
 
 This picture is mis-leading for practical purposes,
 but even this coarse approach is sufficient to guarantee
@@ -459,14 +463,14 @@ Smooth convex functions are precisely those functions whose
 Hessian matrix has no negative eigenvalues at any
 point.
 Such a matrix $M$ is called \emph{positive semi-definite},
-denoted $M \succeq 0$%
+denoted%
 \footnote{Specifically,
 $\succeq$ is the Loewner partial order
 on symmetric matrices.
 $A \succeq B$ if the smallest eigenvalue
 of $A - B$ is greater than or equal to $0$.
-$\succ$ is defined using strict inequality.}%
-.
+$\succ$ is defined using strict inequality.}
+$M \succeq 0$.
 If $M \succ 0$, then its smallest eigenvalue is positive,
 and the matrix is \emph{positive definite}.
 
@@ -511,6 +515,7 @@ argument\footnote{The extension demonstrates that,
 for convex functions,
 points with positive semi-definite Hessians
 are still minimizers.
+See~\cite{boyd2004}.
 This is untrue in the non-convex case,
 and checking whether a point is a minimum becomes NP-Hard at worst,
 see~\cite{murty1987}.},
@@ -575,7 +580,7 @@ are \emph{strict saddle points}.
 These are points where the gradient is $0$
 and the local curvature is upwards in some directions
 and downwards in others.
-See~\exampleref{1ddlae} for an example.
+See~\figureref{nblm-example} for an example.
 If all eigenvalues are non-zero,
 then critical points with index $0$ are local minima
 and critical points with index $1$ are local maxima.
@@ -691,7 +696,7 @@ we might expect that the probability of a positive eigenvalue becomes 1,
 while when the value of the loss is high,
 negative and positive values are both possible.
 A random function drawn according to these rules
-wil have the NBLM property.
+will have the NBLM property.
 
 In \sectionref{grf},
 we will cover the first model of neural network loss functions
@@ -727,7 +732,7 @@ In addition to necessitating that we typically visualize random functions
 by looking at a single example
 (and hoping that any properties we notice are \enquote{typical}),
 rather than drawing a histogram or density,
-this necessitates a somewhat strange definition for the Gaussian random field.
+this further necessitates a somewhat strange definition for the Gaussian random field.
 The definition is clearer if we first introduce an analogous definition
 for multivariate Gaussian random variables.
 
@@ -736,7 +741,7 @@ for multivariate Gaussian random variables.
 	the random variable $w^\top v$ is Gaussian-distributed
 	for all $w\in\R^k$.
 \end{definition}
-As a corollary,
+\noindent As a corollary,
 the family of multivariate Gaussians is closed under all linear transformations,
 since the composition of a linear transformation and an inner product
 is equal to an inner product with another vector.
@@ -751,7 +756,7 @@ have the same property.
 	is Gaussian-distributed
 	for all $w\in\R^n, x_i \in\R^k$.
 \end{definition}
-Here $f^{\otimes n}$ is the $n$-fold product of the function $f$,
+\noindent Here $f^{\otimes n}$ is the $n$-fold product of the function $f$,
 which applies the function $f$ to $n$ separate inputs,
 returning $n$ outputs.
 
@@ -855,7 +860,7 @@ of the Gaussian random field ensemble
 was first put forward in~\cite{dauphin2014}.
 They reported numerical results on the critical points
 of two neural network losses that were in qualitative
-agreement with the effective NBLM property
+agreement with the NBLM property
 of Gaussian random fields.
 We will later see (\chapterref{three})
 that these results have a caveat to them,
@@ -1033,8 +1038,7 @@ the Wishart random matrix ensemble.
 	of an $n$-dimensional Gaussian random vector with
 	iid components.
 \end{definition}
-
-The rank of a Wishart random matrix is almost surely equal to
+\noindent The rank of a Wishart random matrix is almost surely equal to
 the minimum of $n$ and $k$.
 When $k$ is less than $n$,
 the matrix is low-rank.
@@ -1119,12 +1123,12 @@ to allow the calculation of the expected spectrum of a sum of
 freely independent random matrices from knowledge of the separate expected spectra.
 In this model, the relative weight of the Wishart part
 increases as the loss decreases,
-so that at low loss the loss Hessian is almost surely positive semi-definite,
+so that at low loss the Hessian is almost surely positive semi-definite,
 while it is almost surely indefinite at higher values of the loss.
-
 The details of this derivation are in~\cite{pennington2017},
 along with a more sophisticated model
 for the loss of a single hidden-layer ReLU network.
+
 Even without any additions,
 this model is able to better match the qualitative features of
 neural network loss Hessians
@@ -1219,7 +1223,6 @@ on neural network losses is to prove it directly,
 rather than relying on generic optimization proofs
 by demonstrating that the loss function falls in some
 privileged class.
-
 There are two closely-related approaches
 that have born fruit in recent years:
 an asymptotic approach, based on the Neural Tangent Kernel,
