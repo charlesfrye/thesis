@@ -429,10 +429,10 @@ with constant Hessian.
 	Denoting the solution $p^\star$, we find that
 	\begin{align}
 		0 &= \grad{f}{\theta} + \hess{f}{\theta}p^\star\\
-		-\inv{\hess{f}{\theta}}\grad{f}{\theta} = p^\star
+		p^\star &= -\inv{\hess{f}{\theta}}\grad{f}{\theta}
 	\end{align}
 	\noindent from which the claim follows,
-	where $\theta^\star = \theta + p^\star$.
+	with $\theta^\star = \theta + p^\star$.
 \end{theorem}
 
 We call the value $p^\star$ the \emph{pure Newton step}
