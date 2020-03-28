@@ -273,8 +273,8 @@ This is in contrast to the Newton methods reviewed below.
 \section{Exact Newton Methods}\sectionlabel{exact}
 
 Gradient norm minimization does not take any advantage
-of the special structure of the problem,
-namely that our optimization problem was introduced
+of the special structure of our optimization problem,
+namely that it was introduced
 as a proxy for solving a system of equations.
 The other major class of algorithms
 for critical point-finding,
@@ -340,7 +340,7 @@ If we define
 can be written
 \begin{align}
 	\theta_{t+1} &= \theta_t - \frac{x - \theta_t^2}{2\theta_t}\\
-	&= \theta_t - \frac{f(\theta_t)}{\grad{f}{\theta_t}}
+	&= \theta_t - \frac{f(\theta_t)}{\grad{f}{\theta_t}}\equationlabel{newton-iter}
 \end{align}
 \noindent which can be defined for any differentiable $f$,
 so long as $\grad{f}{\theta_t}\neq 0$.
@@ -702,7 +702,7 @@ for an update $p^{\star}$.
 We see that whenever a vector $g$
 is in the image of the Hessian, $\hess{f}{\theta}$,
 we can apply the pseudoinverse, $\pinv{\hess{f}{\theta}}$,
-to $g$ to obtain a vector that is in the pre-image of $g$
+to $-g$ to obtain a vector that is the pre-image of $-g$
 with respect to the Hessian.
 We choose this as our update,
 obtaining the algorithm below.
@@ -731,21 +731,278 @@ the behavior of Newton methods on neural network loss functions.
 
 \section{Inexact Newton Methods}\sectionlabel{inexact}
 
+In \sectionref{exact},
+solved the Newton system exactly
+\begin{equation}
+	0 = \grad{f}{\theta} + \hess{f}{\theta}p^\star
+\end{equation}
+\noindent by means of an algebraic expression.
+But as noted in the beginning of this chapter,
+numerical methods are generically incapable of providing exact solutions.
+While we don't often think of this as applying to algebraic operations,
+we have already seen that it applies to square roots.
+In \sectionref{div},
+we will see that it also applies to division,
+which is a special case of the matrix inversion
+we need to perform exact Newton methods.
+
+We will then consider how we might replace the matrix inversion
+in our exact Newton algorithms, \algoref{newton} and \algoref{newtonPI},
+with an approximate optimization,
+based on iterative solutions to linear systems of equations
+(\secref{linear}).
+
 \subsection{Optimization Approach to Division}\sectionlabel{div}
+
+The Babylonian algorithm for computing the square root
+of a positive real number $x$,
+\algoref{babylon},
+had the following iteration rule:
+\begin{equation}\equationlabel{babylon-iter}
+	\theta_{t+1} = \theta_t / 2 + x \div \theta_t / 2
+\end{equation}
+\noindent For binary representations,
+division by $2$ can be done by an $O(1)$ bit-shift,
+much like division by $10$ in decimal representation.
+However, division by other numbers is,
+like the square root operation,
+not guaranteed to result in a finite binary string:
+$1/3$, for example\footnote{%
+We could commit to exact arithmetic with rational numbers,
+but the sizes of our number representations would grow with each operation,
+which is infeasible for a neural network loss
+defined on thousands of examples.}.
+Note that this is evident in the typical
+\enquote{long division} algorithm
+taught in elementary schools:
+children are often told to simply stop when they
+hit some number of decimal places.
+
+To obtain an alternate division algorithm
+that's more explicitly an optimization,
+we first rewrite the iteration rule as
+\begin{equation}\equationlabel{babylon-inv-iter}
+	\theta_{t+1} = \theta_t / 2 + \inv{\theta_t} x / 2
+\end{equation}
+\noindent which makes the connection
+to the Newton algorithm more clear,
+because it is in terms of an inverse,
+but doesn't solve our problem,
+because the inverse is also an operation
+that takes us outside finite binary strings
+(e.g., $\inv{3}$).
+Let us denote the inverse of $\theta_t$
+as $\gamma^\star$.
+This pair satisfies
+\begin{equation}
+	\gamma^\star = \argmin_{\gamma \in \R_{>0}} \inv{\gamma} - \theta_t
+\end{equation}
+\noindent
+to which we can apply Newton-Raphson
+by introducing the function
+\begin{equation}
+	g(\gamma) = \inv{\gamma} - \theta_t
+\end{equation}
+\noindent with gradient
+\begin{equation}
+	\grad{g}{\gamma} = -\gamma^{-2}
+\end{equation}
+
+This hardly seems like an improvement,
+but when we plug it into the Newton iteration formula
+\equationref{newton-iter},
+and rearrange,
+we obtain an update entirely in terms of
+multiplication and subtraction:
+\begin{align}
+	\gamma_{k+1}
+	&= \gamma_k - \frac{\inv{\gamma_k} - \theta_t}{-\gamma_k^{-2}}\\
+	&= \gamma_k + \gamma_k^2 \times \left(\inv{\gamma_k} - \theta_t\right)\\
+	&= \gamma_k + \gamma_k - \gamma_k^2\times \theta_t\\
+	&= \gamma_k \times \left(2 - \gamma_k \times \theta_t\right)
+\end{align}
+\noindent which results in the inverse algorithm below:
 
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
-    $T\in \N$, $x, \theta_0 \in \R^2$\ \\
-    $t \leftarrow 0$\\
-    \While{$t < T$}{%
-	    $\theta_{t+1} \leftarrow \theta_t \times \left(2 - \theta_t \times x\right)$
+    $K\in \N$, $(\theta, \gamma_0) \in {\left(\R \setminus \Set{0} \right)}^2 $\ \\
+    $k \leftarrow 0$\\
+    \While{$k < K$}{%
+	    $\gamma_{k+1}
+	    \leftarrow \gamma_k \times \left(2 - \gamma_k \times \theta\right)$\\
+	    $k \leftarrow k + 1$
     }%
-    \algolabel{newtondiv}
-    \caption{Newton Method for Division}
+    \algolabel{newtoninv}
+    \caption{Newton Method for Inverse}
 \end{algorithm}
 
-\subsection{Linear Solvers for Inexact Newton}
+Our full square-root finding algorithm, then,
+looks like this:
+in an outer loop,
+update our estimate for the square root
+by applying Newton-Raphson to
+the current estimate,
+as in \algoref{babylon}.
+The division operation requires the computation of the inverse,
+which occurs in an inner loop
+according to \algoref{newtoninv}.
+
+\subsection{Least-Squares Inexact Newton}\sectionlabel{newton-ls}
+
+The motivation for inexact Newton methods
+is precisely the same as for the optimization approach to division:
+we cannot exactly perform the inversion,
+so we search for a sensible way to do it approximately.
+
+We proceed slightly differently to \sectionref{div}.
+We first note that an exact solution to the Newton system,
+$p^\star$,
+also satisfies
+\begin{equation}\equationlabel{newton-ls}
+	p^\star = \argmin_p \snorm{\grad{f}{\theta} + \hess{f}{\theta}p}
+\end{equation}
+\noindent where the expression inside the squared norm
+is the right-hand-side of the Newton system.
+This is another example of relaxation to an optimization problem,
+as described in~\sectionref{sqrt}.
+We can therefore re-write our
+exact Newton algorithms
+in terms of this $\argmin$ operation.
+
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $\theta_0 \in \R^N$,
+    $\nabla{f}\from\R^N\to\R^N$,
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$\\
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	$g \leftarrow \grad{f}{\theta_t}$\\
+	$H \leftarrow \hess{f}{\theta_t}$\\
+	$p^\star{} \leftarrow \argmin_{p}\ \snorm{Hp + g}$\\
+	$\theta_{t+1} \leftarrow \theta_t + p^\star{}$\\
+	$t \leftarrow t + 1$
+    }%
+    \algolabel{newtonLS}
+    \caption{Least-Squares Exact Newton}
+\end{algorithm}
+
+Our two exact Newton methods above
+were different choices of solution to the problem
+of computing the $\argmin$ in this meta-algorithm,
+appropriate for different assumptions about $\nabla^2 f$.
+If we relax the requirement to compute the exact $\argmin$,
+which cannot be satisfied in a numerical setting anyway,
+we obtain a new meta-algorithm,
+which we call \emph{least-squares inexact Newton}.
+
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $\theta_0 \in \R^N$,
+    $\nabla{f}\from\R^N\to\R^N$,
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$,
+    \text{lsq-solve}\\
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	$p \leftarrow \text{lsq-solve}\left(\theta_t, \nabla^2{f}, \nabla{f}\right)$\\
+	$\theta_{t+1} \leftarrow \theta_t + p$\\
+	$t \leftarrow t + 1$
+    }%
+    \algolabel{newtonLS}
+    \caption{Least-Squares Inexact Newton}
+\end{algorithm}
+
+Here, lsq-solve is a function
+that takes in the current parameter value,
+Hessian function, and gradient function,
+and applies an approximate method to minimize
+the least-square value of the right-hand-side
+of the Newton system of equations.
+This setup has several advantages over the exact setup.
+
+First,
+it allows for direct control over numerical issues.
+Iterative methods for computing least-squares solutions
+generally come with hyperparameters for stopping
+before a solution within numerical tolerance is obtained.
+For example, when a matrix $M$ is non-invertible,
+its numerical representation is typically invertible,
+because its eigenvalues are non-zero, but very small.
+The numerically-inverted matrix will have large eigenvalues
+and the result of applying it to some vectors will be very large.
+An iterative solver can detect that its solution has grown above
+a threshold and terminate.
+
+Second, it transfers immediately to the case
+where the Hessian matrix is non-invertible.
+There are two issues in this case.
+Firstly,
+the $\argmin$ in \algoref{newtonLS}
+need no longer be a single value,
+but can instead be a set
+(indeed, a linear subspace!).
+This occurs because
+any portion of $p$
+in the kernel of $H$ can take on any value.
+A least-squares solver
+will always return only
+a single value from this set,
+typically according to some criterion.
+The exact solution computed by
+pseudo-inverse Newton,
+\algoref{newtonPI},
+corresponds to choosing the element of the $\argmin$
+with minimum norm,
+as in the algorithm below.
+Secondly,
+the updates in the exact case were taken to be solutions
+of the Newton system,
+which need not exist in the non-invertible case.
+When $g$ is in the co-image of $H$,
+no vector $p$ satisfies the Newton system.
+Such a system is called \emph{unsatisfiable},
+and we will have more to say about this case in~\chapterref{three}.
+When the Newton system is unsatisfiable
+the updates are not solutions,
+but merely elements of the $\argmin$ in \equationref{newton-ls}.
+
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $\theta_0 \in \R^N$,
+    $\nabla{f}\from\R^N\to\R^N$,
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$\\
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	$g \leftarrow \grad{f}{\theta_t}$\\
+	$H \leftarrow \hess{f}{\theta_t}$\\
+	$P \leftarrow \argmin_{p}\ \snorm{Hp + g}$\\
+	$p^\star{} \leftarrow \argmin_{p \in P}\ \snorm{p}$\\
+	$\theta_{t+1} \leftarrow \theta_t + p^\star{}$\\
+	$t \leftarrow t + 1$
+    }%
+    \algolabel{newtonLS-incompatible}
+    \caption{Least-Squares Exact Newton for Incompatible Systems}
+\end{algorithm}
+
+The classic choice for linear solver is the conjugate gradient algorithm.
+This algorithm has several nice properties.
+With exact arithmetic, it produces an exact solution
+in exactly $N$ steps, where the dimension of the system is $N\times N$.
+Furthermore, it can be implemented entirely
+in terms of matrix-vector products,
+with no need to form any $N\times N$ matrices,
+which reduces memory footprint.
+This is particularly advantageous when the matrix is a Hessian,
+because Hessian-vector products can also be computed in $O(N)$ time%
+~\cite{pearlmutter1994},
+versus $O(N^2)$ time for generic matrix-vector products.
+These properties are shared by the class of
+Krylov-subspace methods,
+which compute their solutions in a sequence of subspaces
+of increasing dimension, up to $N$.
 
 \section{Practical Newton Methods}\sectionlabel{practical}
 
@@ -822,4 +1079,3 @@ the behavior of Newton methods on neural network loss functions.
 \onlyinsubfile{\printbibliography}
 
 \end{document}
-
