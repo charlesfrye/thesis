@@ -68,7 +68,7 @@
 
 % Theorems and Definitions
 \newtcbtheorem[number within=chapter]{theorem}{Theorem}%
-{colback=CalBlue!5,colframe=CalBlue,fonttitle=\bfseries}{th}
+{colback=CalBlue!5,colframe=CalBlue,fonttitle=\bfseries}{thm}
 % \theoremstyle{definition}
 \newtcbtheorem[number within=chapter]{definition}{Definition}%
 {colback=CalBlue!5,colframe=CalBlue,fonttitle=\bfseries}{def}
@@ -195,8 +195,9 @@
 \newcommand{\intervaloc}{\genericinterval(]}
 \newcommand{\intervalco}{\genericinterval[)}
 
-% qed symbol
+% qed symbol and placement
 \renewcommand{\qedsymbol}{{$\blacksquare$}}
+\newcommand{\QED}{\rightline{$\qedsymbol$}}
 
 % bold vector notation
 \usepackage{bm}
