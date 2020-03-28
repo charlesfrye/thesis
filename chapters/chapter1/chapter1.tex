@@ -30,20 +30,22 @@ laid out in this thesis as it was experienced,
 warts and all,
 and in terms comprehensible to a wide audience.
 If you're only interested in the technical material,
-proceed to the next section,~\sectionref{nnls}.
+proceed to the next section,~\sectionref{nnls},
+to get started,
+or double back to the abstract for an overview.
 
 Neural networks are machine learning systems
 that are, as of the writing of this thesis in 2020,
-to say nothing of the beginning of this research project in 2016,
 widely used but poorly understood.
-The original purpose of the research was to
+The original purpose of the research project
+that became this dissertation was to
 understand how the
 architecture, dataset, and training method
 interact to determine which neural network training problems
 are easy.
 The approach was inspired by methods from chemical physics~\cite{ballard2017}
-and based on an analogy between a physical system minimizing its energy
-and a machine learning system maximizing its performance.
+and based on an analogy between a physical system minimizing energy
+and a machine learning system maximizing performance.
 Conceptually, the goal is to characterize all of the configurations
 in which the system is stable,
 the \emph{critical points} or stationary points
@@ -75,10 +77,14 @@ to a critical point, the squared gradient norm,
 stubbornly refused to decrease.
 
 The algorithms used to find critical points are complicated ---
-both in terms of their implementation and in terms of the number of knobs
-to twiddle to configure them, or hyperparameters ---
-and they behave quite differently from typical machine learning algorithms.
-We had implemented these algorithms ourselves,
+both in terms of their implementation and
+in terms of the number of knobs, or hyperparameters,
+we can to twiddle to configure them.
+Furthermore, they behave quite differently
+from typical machine learning algorithms,
+and so intuition gained from experience working with those algorithms
+can be misleading.
+We had implemented these critical point-finding algorithms ourselves,
 due to the absence, at the beginning of this research project,
 of important technical tools in typical neural network software packages.
 We furthermore had limited expertise and experience in this domain,
@@ -86,7 +92,7 @@ so our first thought was that we had either implemented the algorithms incorrect
 or weren't configuring them properly.
 
 As it turned out, both of those hypotheses were correct,
-but verifying them turned out to be a research project in itself.
+but verifying them became a research project in itself.
 The key innovation was the introduction of the \emph{deep linear autoencoder}
 as a test problem.
 For this very special neural network,
@@ -101,7 +107,7 @@ They form the first part of~\chapterref{three}.
 
 Unfortunately, the process of debugging and tuning critical point-finding
 algorithms on the deep linear autoencoder did not solve
-our performance problems.
+our performance problems on non-linear networks.
 It remained the case that the squared gradient norm metric was abnormally high,
 along with other signatures of bad behavior on the part of our algorithms.
 
@@ -113,7 +119,8 @@ was not well-appreciated.
 Implicit in the literature on critical point-finding was the fact that,
 whenever a certain vector (the gradient)
 was mapped to 0 by a certain matrix (the Hessian),
-critical point-finding would fail.
+critical point-finding would fail%
+~\cite{griewank1983,boyd2004,roosta2018}.
 We named this condition \emph{gradient-flatness}
 and, on reviewing the outputs of our critical point-finding algorithms
 when applied to neural networks,
@@ -159,7 +166,8 @@ we will focus on the important special case of supervised learning.
 In supervised learning, a collection of inputs $X$ and targets $Y$
 are provided, and the goal is to find a function from $\cX$ to $\cY$
 such that the value of some cost function $c$ is low, on average, when applied to
-pairs of targets and their matching inputs after being passed through the network.
+matching pairs of targets and inputs
+after being passed through the network.
 Optionally, certain parameter values may be considered more \enquote{costly}
 than others, and this is enforced by a regularizer $r$
 that is added to the cost.
@@ -172,7 +180,9 @@ and is defined below.
 	and input data $X$ and targets $Y$,
 	we define the \emph{loss function} as
 	\begin{equation}\equationlabel{def-loss}
-		L(\theta) \defeq \frac{1}{n}\sum_{x_i, y_i \in X, Y} c(\mathrm{NN}(\theta)(x_i), y_i) + r(\theta)
+		L(\theta) \defeq
+		\frac{1}{n}\sum_{x_i, y_i \in X, Y}
+			c(\mathrm{NN}(\theta)(x_i), y_i) + r(\theta)
 	\end{equation}
 \end{definition}
 The notation for this setup is summarized in \tableref{loss-notation}.
@@ -226,16 +236,18 @@ as an optimization problem.
 An element of an $\argmin$ is known as a \emph{global minimum}.
 Finding global minima is generically a hard problem in the strictest sense,
 because almost any problem in mathematics can be formulated as an
-optimization problem\footnote{This is the \emph{variational approach},
-used in, e.g.~the Courant-Fischer-Weyl characterization of eigenvalues,
+optimization problem.
+This is the \emph{variational approach},
+which is a ubiquitous method in mathematics%
+\footnote{E.g.~the Courant-Fischer-Weyl characterization of eigenvalues,
 the variational approach to inference~\cite{wainwright2007},
 the Lagrangian approach to mechanics,
 and even the universal construction approach in category theory~\cite{milewski2014}.
 }.
 One might think of machine learning in general as
 a variational approach to programming computers.
-Whether optimization works
-depends on whether the optimization problem
+The variational approach is particularly useful
+when the resulting optimization problem
 has a fast solution algorithm.
 
 Almost all methods for optimizing neural networks
@@ -274,10 +286,10 @@ But our goal is to minimize $L$, not $\hat{L}$,
 and as $\eps$ grows, so does the approximation error $o(\eps)$,
 and so we select a finite length vector.
 We choose the one that makes that inner product most negative,
-for its length,
-the negative gradient,
-and then typically apply a scaling factor $\eta$,
-called the \emph{learning rate}.
+for its length.
+This is the negative gradient.
+We then typically apply a scaling factor $\eta$,
+called the \emph{learning rate} or \emph{step size}.
 The resulting optimization method,
 defined in \algoref{gd},
 is known as \emph{gradient descent}.
@@ -297,7 +309,8 @@ whenever the parameter is a minimizer,
 the gradient
 is $0$:
 \begin{equation}\equationlabel{minimizers-critical}
-	\theta \in \argmin_{\theta \in \Theta} L(\theta) \Rightarrow \grad{L}{\theta} = 0
+	\theta^\star \in \argmin_{\theta \in \Theta} L(\theta)
+	\Rightarrow \grad{L}{\theta^\star} = 0
 \end{equation}
 and so, if initialized from a minimizer,
 any gradient-based algorithm will stay there.
@@ -424,11 +437,11 @@ that approximates the original scalar function.
 
 Combined, the gradient function and the Hessian function produce a quadratic approximation
 of the original function $L$:
-\begin{equation}
+\begin{equation}\equationlabel{taylor-two}
 	L\left(\theta + \eps\right) =
 	L(\theta)
 	+ \langle\grad{L}{\theta},\eps\rangle
-	+ \eps^\top\hess{L}{\theta}\eps + o(\snormt{\eps})\equationlabel{taylor-two}
+	+ \eps^\top\hess{L}{\theta}\eps + o(\snorm{\eps})
 \end{equation}
 
 Note that the Hessian appears in~\equationref{taylor-two}
@@ -440,14 +453,20 @@ of the underlying matrix:
 the number of positive, negative, and 0 eigenvalues\footnote{%
 Because the matrices are real and symmetric,
 there are no complex eigenvalues.}.
+We will later classify critical points in the same fashion.
 
 Smooth convex functions are precisely those functions whose
 Hessian matrix has no negative eigenvalues at any
 point.
 Such a matrix $M$ is called \emph{positive semi-definite},
-often denoted $M \succeq 0$,
-where the partial order $\succ$ is defined by
-comparing smallest eigenvalues.
+denoted $M \succeq 0$%
+\footnote{Specifically,
+$\succeq$ is the Loewner partial order
+on symmetric matrices.
+$A \succeq B$ if the smallest eigenvalue
+of $A - B$ is greater than or equal to $0$.
+$\succ$ is defined using strict inequality.}%
+.
 If $M \succ 0$, then its smallest eigenvalue is positive,
 and the matrix is \emph{positive definite}.
 
@@ -460,16 +479,15 @@ for sufficiently small $\eps$,
 at a point $\theta^*$ where the gradient is $0$
 and the Hessian is positive definite,
 we have that
-
 \begin{align}
 	L\left(\theta^* + \eps\right) &=
 	L(\theta^*)
 	+ \langle\grad{L}{\theta^*},\eps\rangle
-	+ \eps^\top\hess{L}{\theta^*}\eps + o(\snormt{\eps})\\
+	+ \eps^\top\hess{L}{\theta^*}\eps + o(\snorm{\eps})\\
 	&=
 	L(\theta^*)
 	+ 0
-	+ \eps^\top\hess{L}{\theta^*}\eps + o(\snormt{\eps})\\
+	+ \eps^\top\hess{L}{\theta^*}\eps + o(\snorm{\eps})\\
 	&\geq
 	L(\theta^*)
 \end{align}
@@ -523,7 +541,15 @@ $\Theta_{\cp} \supset \Theta_{\lm}$.
 Does gradient descent converge to non-minimizing critical points,
 or only to local minimizers?
 
-We can classify critical points according to the
+Reviewing the second order approximation of the loss
+in~\equationref{taylor-two},
+we see that, at a critical point $\theta_\cp$,
+the first order term vanishes
+\begin{equation}
+	L(\theta_\cp + \eps) = \eps^\top\hess{L}{\theta_\cp}\eps + o(\snorm{\eps})
+\end{equation}
+\noindent leaving only the second-order term.
+We can therefore classify critical points according to the
 eigenvalue spectrum of their associated Hessian.
 The fraction of negative eigenvalues is known as the
 \emph{index} of the critical point.
@@ -532,7 +558,7 @@ The fraction of negative eigenvalues is known as the
 	For a critical point $\theta\in\Theta^L_{\cp}$,
 	we define the \emph{index}
 	as the number of negative eigenvalues
-	ofn the hessian of $L$ at $\theta$:
+	of the Hessian of $L$ at $\theta$:
 	\begin{equation}\equationlabel{def-index}
 		I(\theta) = \frac{1}{N}
 		\sum_{\lambda_i \in \Lambda\left(\hess{L}{\theta}\right)}%
@@ -544,7 +570,12 @@ The fraction of negative eigenvalues is known as the
 	and $\Ind$ is the indicator function.
 \end{definition}
 
-Points with non-zero index are \emph{strict saddle points}.
+Points with index strictly between $0$ and $1$
+are \emph{strict saddle points}.
+These are points where the gradient is $0$
+and the local curvature is upwards in some directions
+and downwards in others.
+See~\exampleref{1ddlae} for an example.
 If all eigenvalues are non-zero,
 then critical points with index $0$ are local minima
 and critical points with index $1$ are local maxima.
@@ -569,7 +600,8 @@ and can be accelerated via momentum~\cite{jin2018b}.
 	for $\Theta = \R^2$.
 	The resulting loss function $L$ is
 	\begin{equation}\equationlabel{nblm-example}
-		L\left(\theta_1, \theta_2\right) = {\left(\theta_2\theta_1 - 1\right)}^2
+		L\left(\theta_1, \theta_2\right)
+		= {\left(\theta_2\theta_1 - 1\right)}^2
 	\end{equation}
 	In more standard terminology,
 	it corresponds to the choice of
@@ -601,7 +633,8 @@ and can be accelerated via momentum~\cite{jin2018b}.
 	 The value of $L$ is represented by color,
 	 with low values in black and high values in white.
 	 Contours are logarithmically-spaced for illustrative purposes.
-	 Critical points in blue, and global minima in gold.}
+	 Critical points in blue, and global minima in gold.
+ 	 The isolated critical point at the origin is a strict saddle.}
 	\figurelabel{nblm-example}
 \end{example}
 
@@ -925,7 +958,7 @@ to a Wigner semicircular distribution.
 	we drop the prefix of \enquote{shifted}.
 \end{definition}
 This distribution is symmetric about the control parameter $\gamma$.
-For $\gamma=0$, this means that, for a large symmetric Wigner matrix
+For $\gamma=0$, this means that, for a large symmetric Wigner matrix,
 approximately half of the eigenvalues will
 be negative and half of the values will be positive.
 As $\gamma$ changes, the fraction of eigenvalues above and below zero changes.
@@ -1205,13 +1238,16 @@ Alternatively, it could be the case that the optimizability
 of large neural networks follows directly from their size.
 Both~\cite{allenzhu2018} and~\cite{du2018}
 prove that gradient descent applied to a neural network loss
-converges to within $\epsilon$ of a global minimum from a random initialization
+converges to within $\epsilon$ of a global minimum
+from a random initialization,
+provided that the number of
+neurons in each layer is polynomial in a problem-dependent set of parameters.
+Furthermore, this occurs
 within a polynomial number of steps in terms of
-problem-specific parameters so long as the number of
-neurons in each layer is polynomial in a similar set of parameters.
+a similar set of parameters.
 In both cases, the convergence rate in terms of $\epsilon$
 is the same as in traditional proofs for gradient methods
-(i.e., log-linear).
+(i.e.~linear,~\cite{boyd2004}).
 The result in~\cite{du2018} has an exponential dependence on depth for networks
 without residual connections,
 which is absent in~\cite{allenzhu2018}.
