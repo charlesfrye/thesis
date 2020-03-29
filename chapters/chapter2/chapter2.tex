@@ -732,7 +732,7 @@ the behavior of Newton methods on neural network loss functions.
 \section{Inexact Newton Methods}\sectionlabel{inexact}
 
 In \sectionref{exact},
-solved the Newton system exactly
+we solved the Newton system exactly
 \begin{equation}
 	0 = \grad{f}{\theta} + \hess{f}{\theta}p^\star
 \end{equation}
@@ -987,11 +987,48 @@ but merely elements of the $\argmin$ in \equationref{newton-ls}.
     \caption{Least-Squares Exact Newton for Incompatible Systems}
 \end{algorithm}
 
-The classic choice for linear solver is the conjugate gradient algorithm.
-This algorithm has several nice properties.
+We now turn to the choice of method for lsq-solve.
+
+\subsection{Krylov Subspace Methods for Least-Squares Inexact Newton}
+
+In principle, the least-squares sub-problem
+could be solved by generic optimization methods.
+However, this is unwise, because it is a very special type
+of optimization problem:
+it is a \emph{linear} system of equations.
+Linearity is a powerful property that enables
+specialized algorithms to achieve very high performance.
+These algorithms are called \emph{linear solvers}.
+
+The classic choice for linear solver is the
+\emph{conjugate gradient} algorithm.
+On each iteration, conjugate gradient
+produces a step that is \emph{conjugate}
+to all previous steps
+with respect to the current Hessian $H$,
+as defined below.
+See~\cite{boyd2004} for details on this algorithm.
+\begin{definition}{Conjugate Vectors}{conjugate}
+	Two vectors $x$ and $y$ are \emph{conjugate}
+	with respect to the symmetric matrix $M$ if
+	\begin{equation}
+		x^\top M y = 0
+	\end{equation}
+	\noindent By the symmetry of $M$,
+	conjugacy is a symmetric relation.
+\end{definition}
+\noindent
+
+Conjugate gradient has several nice properties
+as a linear solver for inexact Newton.
 With exact arithmetic, it produces an exact solution
-in exactly $N$ steps, where the dimension of the system is $N\times N$.
-Furthermore, it can be implemented entirely
+in no more than $N$ steps,
+where the dimension of the system is $N\times N$.
+This is to be contrasted with generic optimization approaches,
+like gradient descent,
+which need never produce exact solutions,
+even with exact arithmetic.
+Furthermore, conjugate gradient can be implemented entirely
 in terms of matrix-vector products,
 with no need to form any $N\times N$ matrices,
 which reduces memory footprint.
@@ -999,10 +1036,88 @@ This is particularly advantageous when the matrix is a Hessian,
 because Hessian-vector products can also be computed in $O(N)$ time%
 ~\cite{pearlmutter1994},
 versus $O(N^2)$ time for generic matrix-vector products.
-These properties are shared by the class of
-Krylov-subspace methods,
-which compute their solutions in a sequence of subspaces
-of increasing dimension, up to $N$.
+
+These properties stem from the fact that it is a
+\emph{Krylov subspace method},
+meaning that it computes
+its solution in a sequence of special subspaces
+of increasing dimension, up to $N$,
+defined below.
+\begin{definition}{Krylov Subspace Methods}{krylov}
+	Let $M$ be a matrix in $\R^{N\times N}$
+	and $x$ be a vector in $\R^N$.
+	The emph{Krylov subspace}
+	of order $r$
+	for $M$ and $x$, denoted
+	$\cK_r\left(M, x\right)$,
+	is defined as
+	\begin{equation}
+		\cK_r\left(M, x\right)
+		\defeq \mathrm{span}\Set{x, Mx, M^2x, \dots M^{r-1}x}
+	\end{equation}
+
+	An optimization method is a
+	\emph{Krylov subspace method}
+	if its iterate at step $r$, $\p_r$,
+	is an element of the Krylov subspace of order $r$.
+\end{definition}
+\noindent Note that the Krylov subspaces
+are constructed iteratively,
+with each new vector produced by
+means of matrix-vector multiplication.
+
+The choice of conjugate gradient is motivated
+by the fact that, for a smooth, convex
+function $f(\theta) \from \Theta \to \R$,
+the $k$th iterate of conjugate gradient, $p_k$,
+applied to the Newton system at a point $\theta_t$ satisfies
+\begin{align}
+	p_k
+	&= \argmin_{p \in \cK_k\left(\hess{f}{\theta_t}, \grad{f}{\theta_t}\right)}
+	\grad{f}{\theta_t}^\top p + \frac{1}{2} p^\top\hess{f}{\theta_t}p\\
+	&= \argmin_{p \in \cK_k\left(\hess{f}{\theta_t}, \grad{f}{\theta_t}\right)}
+	\hat{f}_{\theta_t}(p)
+\end{align}
+\noindent where $\hat{f}_{\theta_t}$
+is the second-order Taylor expansion of $f$
+at $\theta_t$.
+That is, conjugate gradient produces
+the point within each Krylov subspace
+that minimizes the quadratic approxmation
+of the function $f$ at $\theta_t$.
+
+This is ideal for the minimization of convex functions,
+but our goal is different:
+we wish to minimize the gradient.
+We should therefore like, instead,
+that our iterates minimize
+the norm of our approximation of the gradient,
+$r(p) = \grad{f}{x} + \hess{f}{x}p$,
+within each Krylov subspace.
+The quantity $r$ is known as the \emph{residual},
+and so we call a Newton method that uses
+a linear solver with that property
+a \emph{minimum residual Newton method}%
+~\cite{roosta2018}.
+
+\begin{algorithm}[H]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $K \in \N$, $\theta_0 \in \R^N$,
+    $\nabla{f}\from\R^N\to\R^N$,
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$\\
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	$g \leftarrow \grad{f}{\theta_t}$\\
+	$H \leftarrow \hess{f}{\theta_t}$\\
+	$\cK \leftarrow \cK_K\left(H, g\right)$\\
+	$p^\star{} \leftarrow \argmin_{p \in \cK}\ \snorm{g + Hp}$\\
+	$\theta_{t+1} \leftarrow \theta_t + p^\star{}$\\
+	$t \leftarrow t + 1$
+    }%
+    \algolabel{newton-minres}
+    \caption{Minimum Residual Newton}
+\end{algorithm}
 
 \section{Practical Newton Methods}\sectionlabel{practical}
 
