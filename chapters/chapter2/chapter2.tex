@@ -4,24 +4,22 @@
 \begin{document}
 
 \chapter{%
-Critical Point-Finding Algorithms
+Second-Order Critical Point-Finding Algorithms
 }\chapterlabel{two}
 \onlyinsubfile{\begin{KeepFromToc}
 		\tableofcontents
-		\clearpage
-		\listoffigures
 		\listofalgorithms{}
 	\end{KeepFromToc}}
 \onlyinsubfile{\clearpage}
 \onlyinsubfile{\linenumbers}
 
-\section{Chapter Summary}\sectionlabel{summary}
+\section{Chapter Summary}\sectionlabel{ch2-summary}
 
 In this chapter,
 we define two classes of algorithms for finding critical points:
-gradient norm minimization
+gradient norm minimization methods
 and Newton methods.
-All of these examples are
+All of these algorithms are
 numerical, iterative methods
 based on linear approximations of the gradient function
 given by the Hessian function.
@@ -63,13 +61,31 @@ and a fundamental arithmetic operation: taking the square root.
 
 This running example is used to motivate
 each of three algorithm classes in turn:
-gradient norm minimization (\sectionref{gnm}),
+gradient norm minimization methods (\sectionref{gnm}),
 exact Newton methods (\sectionref{exact}),
 and inexact Newton methods (\sectionref{inexact}).
 Practical versions of Newton methods
 for high-dimensional problems
 require additional tricks,
 which are reviewed in \sectionref{practical}.
+
+The presentation of the Newton methods
+is intentionally didactic and lengthy.
+These methods are relatively unfamiliar
+to the neural network community.
+First, second-order optimization methods,
+like Newton methods for convex functions,
+are not commonly used to train neural networks.
+Second,
+Newton methods for critical point-finding
+are different in motivation
+and implementation than those used in
+convex optimization.
+It is hoped that the
+thorough elaboration of these methods
+in this chapter will help ease
+the incorporation of these methods
+into the toolkits of future neural network researchers.
 
 \section{Optimization Approach to Taking Square Roots}\sectionlabel{sqrt}
 
@@ -321,7 +337,7 @@ yielding the below algorithm:
 	    $\theta_{t+1} \leftarrow \frac{\theta_t}{2} + \frac{x \div \theta_t}{2}$
     }%
     \algolabel{babylon}
-    \caption{Babylonian Algorithm for Square Roots}
+    \caption{Babylonian Algorithm}
 \end{algorithm}
 \noindent Recall that the motivation for considering the square root problem
 was that $\sqrt{}$, unlike $+$ and $\times$,
@@ -676,7 +692,7 @@ then extend it for all matrices by means of the SVD.\@
 	denoted $\pinv{M}\from \R^m \to \R^n$, as
 	\begin{align}
 		\pinv{M}
-		&\defeq \pinv{V^{\top}}\pinv{\Sigma}\pinv{U}\\
+		&\defeq \pinv{\left(V^{\top}\right)}\pinv{\Sigma}\pinv{U}\\
 		&= V \inv{\Sigma} U^\top
 	\end{align}
 	This is sometimes known as the Moore-Penrose pseudo-inverse.
@@ -732,11 +748,11 @@ the behavior of Newton methods on neural network loss functions.
 \section{Inexact Newton Methods}\sectionlabel{inexact}
 
 In \sectionref{exact},
-we solved the Newton system exactly
+we solved the Newton system algebraically and exactly
 \begin{equation}
 	0 = \grad{f}{\theta} + \hess{f}{\theta}p^\star
 \end{equation}
-\noindent by means of an algebraic expression.
+\noindent
 But as noted in the beginning of this chapter,
 numerical methods are generically incapable of providing exact solutions.
 While we don't often think of this as applying to algebraic operations,
@@ -749,8 +765,9 @@ we need to perform exact Newton methods.
 We will then consider how we might replace the matrix inversion
 in our exact Newton algorithms, \algoref{newton} and \algoref{newtonPI},
 with an approximate optimization,
-based on iterative solutions to linear systems of equations
-(\secref{linear}).
+based on iterative solutions to linear systems of equations.
+We will focus on the Krylov subspace methods
+(\secref{krylov}).
 
 \subsection{Optimization Approach to Division}\sectionlabel{div}
 
@@ -782,7 +799,7 @@ To obtain an alternate division algorithm
 that's more explicitly an optimization,
 we first rewrite the iteration rule as
 \begin{equation}\equationlabel{babylon-inv-iter}
-	\theta_{t+1} = \theta_t / 2 + \inv{\theta_t} x / 2
+	\theta_{t+1} = \theta_t / 2 + \inv{\theta_t} \times x / 2
 \end{equation}
 \noindent which makes the connection
 to the Newton algorithm more clear,
@@ -810,7 +827,7 @@ by introducing the function
 
 This hardly seems like an improvement,
 but when we plug it into the Newton iteration formula
-\equationref{newton-iter},
+\equationref{newton-iter}
 and rearrange,
 we obtain an update entirely in terms of
 multiplication and subtraction:
@@ -821,7 +838,7 @@ multiplication and subtraction:
 	&= \gamma_k + \gamma_k - \gamma_k^2\times \theta_t\\
 	&= \gamma_k \times \left(2 - \gamma_k \times \theta_t\right)
 \end{align}
-\noindent which results in the inverse algorithm below:
+\noindent which results in the approximate inverse algorithm below:
 
 \begin{algorithm}[H]
     \SetAlgoLined{}
@@ -834,7 +851,7 @@ multiplication and subtraction:
 	    $k \leftarrow k + 1$
     }%
     \algolabel{newtoninv}
-    \caption{Newton Method for Inverse}
+    \caption{Newton Inversion}
 \end{algorithm}
 
 Our full square-root finding algorithm, then,
@@ -847,6 +864,7 @@ as in \algoref{babylon}.
 The division operation requires the computation of the inverse,
 which occurs in an inner loop
 according to \algoref{newtoninv}.
+Note that this inverse is approximate as well.
 
 \subsection{Least-Squares Inexact Newton}\sectionlabel{newton-ls}
 
@@ -934,6 +952,8 @@ The numerically-inverted matrix will have large eigenvalues
 and the result of applying it to some vectors will be very large.
 An iterative solver can detect that its solution has grown above
 a threshold and terminate.
+This is just one of many ways that iterative solvers
+can better handle numerical issues.
 
 Second, it transfers immediately to the case
 where the Hessian matrix is non-invertible.
@@ -987,14 +1007,15 @@ but merely elements of the $\argmin$ in \equationref{newton-ls}.
     \caption{Least-Squares Exact Newton for Incompatible Systems}
 \end{algorithm}
 
-We now turn to the choice of method for lsq-solve.
+\subsection{Krylov Subspace Methods for Least-Squares Inexact Newton}\sectionlabel{krylov}
 
-\subsection{Krylov Subspace Methods for Least-Squares Inexact Newton}
+We now turn to the choice of method for lsq-solve.
+This discussion closely follows that in~\cite{roosta2018}.
 
 In principle, the least-squares sub-problem
-could be solved by generic optimization methods.
+could be solved by generic convex optimization methods.
 However, this is unwise, because it is a very special type
-of optimization problem:
+of convex problem:
 it is a \emph{linear} system of equations.
 Linearity is a powerful property that enables
 specialized algorithms to achieve very high performance.
@@ -1030,12 +1051,14 @@ which need never produce exact solutions,
 even with exact arithmetic.
 Furthermore, conjugate gradient can be implemented entirely
 in terms of matrix-vector products,
-with no need to form any $N\times N$ matrices,
+with no need to form any $N\times N$ matrices
+besides the linear system's matrix of coefficients,
 which reduces memory footprint.
 This is particularly advantageous when the matrix is a Hessian,
-because Hessian-vector products can also be computed in $O(N)$ time%
-~\cite{pearlmutter1994},
-versus $O(N^2)$ time for generic matrix-vector products.
+because Hessian-vector products can also be computed in $O(N)$ time,
+versus $O(N^2)$ time for generic matrix-vector products,
+and don't even require the explicit formation of the $N \times N$ Hessian%
+~\cite{pearlmutter1994}.
 
 These properties stem from the fact that it is a
 \emph{Krylov subspace method},
@@ -1097,50 +1120,306 @@ within each Krylov subspace.
 The quantity $r$ is known as the \emph{residual},
 and so we call a Newton method that uses
 a linear solver with that property
-a \emph{minimum residual Newton method}%
-~\cite{roosta2018}.
+a \emph{minimum residual Newton method},
+as defined below.
+Note that we explicitly consider
+the possibility that the Newton system is unsatisfiable
+in these algorithms and select the final update $p^\star{}$
+according to some criterion function $c$.
+Furthermore, for simplicity's sake,
+we write that the algorithm selects the optimal
+iterate in a Krylov subspace of a fixed order,
+$\cK_K$, but practical algorithms
+would iteratively determine  the Krylov subspace
+based on numerical considerations,
+e.g.~norm of the residual or the solution.
 
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
     $T\in \N$, $K \in \N$, $\theta_0 \in \R^N$,
     $\nabla{f}\from\R^N\to\R^N$,
-    $\nabla^2{f}\from\R^N\to\R^{N\times N}$\\
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$,
+    $c\from \R^N to \R$\\
     $t \leftarrow 0$\\
     \While{$t < T$}{%
 	$g \leftarrow \grad{f}{\theta_t}$\\
 	$H \leftarrow \hess{f}{\theta_t}$\\
 	$\cK \leftarrow \cK_K\left(H, g\right)$\\
-	$p^\star{} \leftarrow \argmin_{p \in \cK}\ \snorm{g + Hp}$\\
+	$P \leftarrow \argmin_{p \in \cK}\ \snorm{g + Hp}$\\
+	$p^\star{} \leftarrow \argmin_{p \in P}\ c(p)$\\
 	$\theta_{t+1} \leftarrow \theta_t + p^\star{}$\\
 	$t \leftarrow t + 1$
     }%
     \algolabel{newton-minres}
-    \caption{Minimum Residual Newton}
+    \caption{Minimum Residual Newton for Incompatible Systems}
 \end{algorithm}
+
+There are two major linear solvers
+that have the minimum residual property%
+\footnote{SYMMLQ, the symmetric LQ method,
+can also be used as a generic linear solver
+for compatible systems,
+but does not satisfy the minimum residual property%
+~\cite{paige1975}.}:
+MINRES~\cite{paige1975},
+short for \enquote{minimum residual},
+and MINRES-QLP~\cite{choi2011},
+also known as MR-QLP,
+which is similar to MINRES but uses the
+QLP decomposition~\cite{huckaby2005}
+in place of the QR decomposition%
+\footnote{Conjugate gradient methods use the
+Cholesky decomposition,
+which is only defined for positive semi-definite matrices.}.
+In addition to MR-QLP having superior performance
+on systems that are ill-conditioned outside of their kernel,
+it also corresponds to the choice of $c(p) = \snorm{p}$
+in~\algoref{newton-minres} above.
+The exact minimum norm solution is the one computed by
+the pseudo-inverse method,
+\algoref{newtonLS-incompatible}.
+Therefore, an inexact Newton method with MR-QLP
+as its linear solver is a natural relaxation
+of an exact pseudo-inverse Newton method.
+
+The choice of MR-QLP as a linear solver
+for inexact Newton methods
+was proposed in~\cite{roosta2018},
+which noted all of the favorable numerical
+and analytical properties described above.
+The final Newton algorithm proposed in~\cite{roosta2018}
+is, however, outside the class of algorithms considered so far.
+We next turn to the additional tricks required to
+define Newton algorithms used in practice.
 
 \section{Practical Newton Methods}\sectionlabel{practical}
 
+The definition of the Newton step in
+the basic Newton-Raphson algorithm in~\algoref{newton}
+was motivated by its optimality for functions with constant Hessian.
+For functions with non-constant Hessian,
+i.e.~those with non-zero third or higher partial derivatives,
+this step is no longer optimal.
+Indeed, Newton's method can diverge,
+for example when used as a root finding method
+on the function
+$f(\theta) = \theta^{1/3}$.
+It can oscillate, for example when applied to find the critical points of
+$f(\theta) = \frac{x^4}{4} - x^2 + 2x$.
+It can even behave chaotically%
+~\cite{griewank1983}.
+We encourage the reader to apply a few iterations
+of~\algoref{newton} to these functions by hand,
+using $1$ for $\theta_0$.
+
+The two most common methods for avoiding
+these issues are damping (\sectionref{damped})
+and back-tracking line search (\sectionref{guarded}).
+The former takes the approach of generating
+multiple Newton-type steps and selecting
+the best one.
+The latter uses a standard Newton step
+to choose a direction and then performs
+a one-dimensional optimization
+to select a step size.
+In both cases, candidate updates are selected
+according to a scalar-valued \emph{merit function}.
+For critical point-finding,
+the appropriate merit function is based on a norm of the gradient,
+here the squared Euclidean norm.
+For optimization, the appropriate merit function
+is the loss.
+
+With these additions,
+we will have finally defined Newton methods
+sufficiently robust to handle the case of
+linear neural networks, as we will see in the first part of
+\chapterref{three}.
+
+
 \subsection{Damped Newton}\sectionlabel{damped}
+
+The motivation for damped Newton methods
+comes from the case of convex functions
+with positive semi-definite but not positive definite Hessians.
+In that case,
+the Hessian can be made positive definite
+by adding an arbitrarily small
+perturbation $\gamma$ to the diagional.
+However, this results in an inverse matrix
+with arbitarily large maximal eigenvalue $\gamma^{-1}$.
+Depending on how much of the gradient lies in the eigenspace
+corresponding to this eigenvalue,
+this could still result in
+a very large step.
+Since the Newton step is motivated by a local analysis,
+this is undesirable.
+Therefore,
+we consider a finite number of possible perturbations\footnote{%
+We denote the set of all finite subsets of a set $S$ as
+$\cP_\omega(S)$},
+$\Gamma = \Set{\gamma_i : \gamma_i \in \R_{\geq 0}}$
+and produce a Newton step for each one,
+with the Hessian matrix $H$ replaced by
+$H + I\gamma_i$ for each $i$.
+Here, $I$ is the identity matrix of
+the same shape as $H$.
+
+We provide an example damped Newton method below,
+in \algoref{damped-newton}
+based on the exact minimum residual Newton method,
+\algoref{newton-minres}.
+Damping can be combined with any method for computing
+the Newton iteration, and is compatible
+with fast Hessian-vector products.
+
+\begin{algorithm}[h]
+    \SetAlgoLined{}
+    \textbf{Require}
+    $T\in \N$, $K \in \N$, $\theta_0 \in \R^N$,
+    $\nabla{f}\from\R^N\to\R^N$,
+    $\nabla^2{f}\from\R^N\to\R^{N\times N}$,
+    \Gamma \in \cP_\omega(\R_{\geq 0})\\
+    $t \leftarrow 0$\\
+    \While{$t < T$}{%
+	$g \leftarrow \grad{f}{\theta_t}$\\
+	$P^\star{} \leftarrow \Set{}$\\
+	\For{$\gamma \in \Gamma$}{%
+		$H \leftarrow \hess{f}{\theta_t} + I\gamma$\\
+		$\cK \leftarrow \cK_K\left(H, g\right)$\\
+		$P \leftarrow \argmin_{p \in \cK}\ \snorm{g + Hp}$\\
+		$P^\star{} \leftarrow P^\star{} \cup \argmin_{p \in P}\ \snorm{p}$
+	}
+	$p^\star{} \leftarrow \argmin_{p \in P^\star{}}\ \sgn{f}{\theta_t  + p}$\\
+	$\theta_{t+1} \leftarrow \theta_t + p^\star{}$\\
+	$t \leftarrow t + 1$
+    }%
+    \algolabel{damped-newton}
+    \caption{Minimum Residual Damped Newton Method}
+\end{algorithm}
+
+Damping methods are, however,
+not particularly well-suited to Hessians that are indefinite,
+with both positive and negative eigenvalues.
+Indeed, they can cause the matrix to become singular,
+even if it is initially non-singular.
+The eigenvalues of the matrix $M + \gamma I$
+are equal to the eigenvalues of $M$ plus $\gamma$,
+so any eigenvalue equal to $-\gamma$ becomes $0$.
+More broadly,
+the goal of damping in the positive semi-definite case
+was to reduce the maximum step size by controlling
+the maximum eigenvalue of the inverse matrix.
+In the indefinite case, this is no longer achieved.
+This method was, however, used in%
+~\cite{dauphin2014}
+as a critical point-finding method
+on neural network loss surfaces,
+so we will examine its performance in~\chapterref{three}.
 
 \subsection{Guarded Newton}\sectionlabel{guarded}
 
-\begin{algorithm}[H]
+Unlike typical first-order optimization algorithms,
+the Newton methods presented thus far have had no step size hyperparameter.
+These Newton methods are sometimes called \emph{pure} Newton methods.
+Effectively, the step size has been fixed at $1$.
+This is not entirely artificial.
+First, the Newton step is invariant to affine transformations
+of the parameterization of the function,
+and so there is a meaning to unit step size
+that is absent in first-order methods.
+Second, and more critically,
+the rapid local convergence of Newton methods
+requires a unit step size
+and collapses if non-unit step sizes are chosen
+(for both claims, see~\cite{boyd2004,nocedal2006,roosta2018}).
+However, when outside the region
+of local convergence,
+the pure Newton step is frequently too long.
+
+One solution is to select the step size adaptively,
+so that it can be $1$ inside the region of rapid convergence
+and less than $1$ outside it.
+Such methods are sometimes called \emph{guarded Newton methods}:
+the method is \enquote{guarded} against taking steps that are too large.
+In particular, one common approach to selecting the step size
+is \emph{back-tracking line search}%
+~\cite{armijo1966},
+abbreviated BTLS.\@
+
+In a line search, the step size $\eta^\star{}$
+for a direction $p$ at a point $\theta$
+is cast as the solution to an optimization problem:
+\begin{equation}
+	\eta^\star{}
+	\defeq \argmin_{\eta \in \R_{\geq 0}} c(\theta + \eta p)
+\end{equation}
+\noindent for some merit function $c$.
+When selecting a step size for a typical optimization problem,
+the natural choice is $c(x) = f(x)$, where $f$ is the loss.
+For critical point-finding,
+the natural choice is $c(x) = \sgn{f}{x}$.
+
+Of course, this problem cannot typically be solved exactly.
+In back-tracking line search,
+the step size is selected by starting with a large value
+$0 < \alpha \leq 1$
+and then decreasing it multiplicatively by a factor $0 < \beta < 1$
+on each failed iteration.
+A failed iteration $k$ is one where the step size choice
+$\alpha \time \beta^k$
+produces insufficient decrease in the merit function $c$.
+The degree of decrease considered sufficient
+is typically an increasing function of the step size
+and controlled by another hyperparameter $0 < \rho < 1$.
+The authors of~\cite{roosta2018}
+determined the appropriate criterion for decrease
+in the case where $c$ is the squared gradient norm
+by considering the case of a function with constant Hessian.
+Effectively, a step size $\eta$ is chosen
+when the squared gradient norm decreases by an amount within
+a factor of $\rho$ of how much it would decrease
+in that case.
+
+We present a back-tracking line search
+appropriate for selecting Newton step sizes
+in \algoref{roosta-btls}.
+We make a few modifications to the basic scheme described above.
+First, we allow the starting value of $\alpha$ to be non-unit,
+but enforce that, before the multiplicative BTLS begins,
+the value of $1$ is always checked first.
+Second, we allow that
+the criterion for convergence used in this check,
+$\rho^\prime$,
+is different from the value
+used in the BTLS, $\rho$.
+Finally,
+we allow the specification of a minimum step size, $\eps$,
+below which $\alpha$ is set to $0$.
+In a numerical setting,
+this is set to the largest value for which
+$\alpha = \beta\alpha$.
+
+\begin{algorithm}[h]
     \SetAlgoLined{}
     \textbf{Require}
     $\nabla f\from\R^N\to\R^N$,
+    $\nabla^2 f\from\R^N\to\R^{N\times N}$,
     $p \in \R^N$,
     $\theta \in \R^N$,
     $\alpha \in \intervaloc{0}{1}$,
     $\beta \in (0, 1)$,
     $\rho \in (0, 1)$,
-    $\rho^\prime \in (0, 1)$
+    $\rho^\prime \in (0, 1)$,
+    $\eps \in \R_{\geq 0}$\\ \ \\
     \DontPrintSemicolon
+    $H \leftarrow \hess{f}{\theta}$\;
     \SetKwFunction{FCheck}{CheckConvergence}
     \SetKwProg{Fn}{Function}{:}{}
     \Fn{\FCheck{$\alpha, \rho$}}{%
         $\theta^\prime \leftarrow \theta + \alpha p$\;
-        $s, s^\prime \leftarrow \sumsq{\grad{f}{\theta}} \sumsq{\grad{f}{\theta^\prime}}$\;
+	$s, s^\prime \leftarrow \sgn{f}{\theta}, \sgn{f}{\theta^\prime}$\;
         $\Delta \leftarrow 2 \rho \alpha \cdot p^\top H \grad{f}{\theta}$\;
         \KwRet $s^\prime \leq s + \Delta$\;}
     \;
@@ -1151,14 +1430,28 @@ a \emph{minimum residual Newton method}%
         converged $\leftarrow \texttt{CheckConvergence}\left(
             \alpha, \rho\right)$\;
         \If{$\mathrm{not\ converged}$}{$\alpha \leftarrow \beta \alpha$\;
-        \If{$\alpha == 0$}{\textbf{break}}}
-    }
-    $\KwRet\ \alpha$
+	\If{$\alpha < \eps$}{\alpha \leftarrow 0\;\textbf{break}\;}}
+    }%
+    $\KwRet\ \alpha$%
+    \caption{Backtracking Line Search for Newton}
     \algolabel{roosta-btls}
-    \caption{Backtracking Line Search for Newton-MR}
 \end{algorithm}
 
-\begin{algorithm}[H]
+\subsubsection{Newton-MR}
+
+The combination of MR-QLP
+for inexact Newton step selection
+and back-tracking line search
+for step size selection
+is known as \emph{Newton-MR}%
+~\cite{roosta2018}.
+This will prove to be the most effective
+algorithm for critical point-finding in
+\chapterref{three},
+so we provide it in pseudocode here
+(\algoref{nmr}).
+
+\begin{algorithm}[h]
     \SetAlgoLined{}
     \textbf{Require}
     $\theta_0 \in \R^N$,
@@ -1173,23 +1466,93 @@ a \emph{minimum residual Newton method}%
     $\alpha \in \intervaloc{0}{1}$,
     $\beta \in (0, 1)$,
     $\rho \in (0, 1)$,
-    $\rho^\prime \in (0, 1)$
+    $\rho^\prime \in (0, 1)$\\ \ \\
     $t \leftarrow 0$\\
     \While{$t < T$}{%
         $g \leftarrow \nabla{f}\left(\theta_t\right)$\\
         $H \leftarrow \nabla^2{f}\left(\theta_t\right)$\\
-        $p \leftarrow \texttt{MRQLP}\left(
+        $p \leftarrow \textrm{MR-QLP}\left(
             H,\ -g,\ \texttt{maxit},\ \texttt{maxxnorm},\ \texttt{rtol},\ \texttt{acondlim}\right)$\\
-        $\alpha \leftarrow \texttt{BTLS}\left(
+        $\alpha \leftarrow \textrm{BTLS}\left(
             \nabla f, p, \theta_t, \alpha, \beta, \rho, \rho^\prime\right)$\\
         $\theta_{t+1} \leftarrow \theta_t + \alpha p$\\
-	\If{$\theta_{t+1} == \theta_{t}$}{\textbf{break}}
+	\If{$\theta_{t+1} == \theta_{t}$}{\textbf{break}\\}
         $t \leftarrow t + 1$
     }%
-    \algolabel{nmr}
     \caption{Newton-MR}
-\end{algorithm}
+    \algolabel{nmr}
 
+\end{algorithm}
+\noindent In this pseudocode,
+MR-QLP is the minimum residual solver
+based on the QLP decomposition
+from~\cite{choi2011}
+described in \sectionref{krylov} and
+BTLS is the back-tracking line search method
+\algoref{roosta-btls}.
+
+We briefly review the hyperparameters of
+MR-QLP here.
+\texttt{maxit} sets the maximum number of iterations.
+In exact arithmetic, this would never need be greater than $N$.
+We found that solutions didn't tend to increase in quality
+for values above $N$.
+\texttt{maxxnorm} sets the largest acceptable value for the norm of $p$
+while \texttt{acondlim} sets the largest acceptable value
+for the estimated condition number of the Hessian restricted
+to the subspace in which the iterations lie.
+We found that MR-QLP did not terminate due to violating these constraints
+for reasonable values,
+and so we set them to 1e4 and 1e7, respectively.
+The critical hyperparameter for stopping behavior was \texttt{rtol},
+short for relative tolerance.
+When either the
+residual or the residual projected onto the Hessian co-kernel
+is less than \texttt{rtol},
+following suitable normalization,
+the algorithm terminates.
+Details on the definitions of these quantities
+are deferred to \chapterref{three}.
+Not listed above is the \texttt{trancond} hyperparameter,
+which determines when the algorithm transitions between
+using the QR and QLP decompositions.
+We set this to 1e4.
+
+\section{Conclusion}\sectionlabel{ch2-conclusion}
+
+In this chapter,
+we introduced two major classes of critical point-finding algorithms:
+gradient norm minimization methods,
+which apply first-order optimization algorithms
+to the squared gradient norm,
+and
+Newton methods,
+which use repeated solution of the Newton system of equations.
+In part because of the complexity of Newton methods
+and in part because of the relative lack of experience and expertise
+with these methods in the neural network community,
+the Newton methods formed the majority of this chapter.
+We approached their explanation pedagogically,
+based on an analogy to the calculation of the square root
+to high accuracy.
+We reviewed exact Newton methods,
+which use algebraic solutions of the Newton system,
+and inexact Newton methods,
+which use iterative methods to approximate those solutions.
+Finally,
+we developed two inexact Newton methods
+of sufficient robustness for practical use,
+damped Newton and Newton-MR.\@
+
+In the next chapter,
+we will apply these algorithms to neural network loss functions.
+After a warm up on a linear neural network
+on which we can check our answers,
+we apply these methods to non-linear neural networks.
+In this case, they will generally fail
+to find critical points,
+which will motivate a re-analysis
+of their behavior when the Hessian is singular.
 
 \onlyinsubfile{\printbibliography}
 
