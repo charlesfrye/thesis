@@ -15,16 +15,20 @@ Second-Order Critical Point-Finding Algorithms
 
 \section{Chapter Summary}\sectionlabel{ch2-summary}
 
+In order to characterize the local curvature properties
+of neural network loss functions at critical points,
+we need first to find critical points.
 In this chapter,
-we define two classes of algorithms for finding critical points:
+we review two classes of algorithms for finding critical points:
 gradient norm minimization methods
 and Newton methods.
 All of these algorithms are
-numerical, iterative methods
-based on linear approximations of the gradient function
-given by the Hessian function.
+numerical, iterative methods.
+They are based on finding the zero values of linear approximations
+of the gradient function.
+These linear approximations are given by the Hessian function.
 We refer to them as \emph{second-order}
-critical point-finding algorithms
+critical point-finding algorithms.
 
 While the analytical critical points exactly satisfy
 the analytical system of (possibly non-linear) equations
@@ -54,26 +58,36 @@ So our algorithms will actually recover approximate critical points:
 
 If only introduced in the case of large-dimensional $\Theta$
 and complex loss function $L$,
-this definition and the problem setup can be somewhat intimidating.
-\sectionref{sqrt} demonstrates a precise analogy
-between finding critical points of complicated loss functions
-and a fundamental arithmetic operation: taking the square root.
+this definition and the problem setup can be somewhat intimidating
+and intuition can be hard to build.
+\sectionref{sqrt} demonstrates a close analogy
+between finding critical points
+and a fundamental arithmetic operation:
+taking the square root.
+Specifically,
+taking the square root will require us to define
+approximate square roots,
+set up a surrogate optimization problem based
+on an inequality that relaxes an equality,
+and develop an inexact, iterative method for scalar inversion%
+\sectionref{div}.
 
-This running example is used to motivate
+This running example is used to intuitively motivate
 each of three algorithm classes in turn:
 gradient norm minimization methods (\sectionref{gnm}),
 exact Newton methods (\sectionref{exact}),
 and inexact Newton methods (\sectionref{inexact}).
 Practical versions of Newton methods
-for high-dimensional problems
+for high-dimensional and non-linear problems
 require additional tricks,
 which are reviewed in \sectionref{practical}.
 
 The presentation of the Newton methods
 is intentionally didactic and lengthy.
-These methods are relatively unfamiliar
+This is because these methods are relatively unfamiliar
 to the neural network community.
-First, second-order optimization methods,
+First,
+second-order optimization methods,
 like Newton methods for convex functions,
 are not commonly used to train neural networks.
 Second,
@@ -154,7 +168,7 @@ so we instead consider a set of approximate square roots,
 to a tolerance $\eps$:
 \begin{equation}\equationlabel{sqrteps}
 	B_\eps \defeq
-	\Set{b \in \R_{\geq 0} \suchthat \snorm{b^\star \times b^\star - a} \leq \eps }
+	\Set{b \in \R_{\geq 0} \suchthat \snorm{b \times b - a} \leq \eps }
 \end{equation}
 \noindent and so the problem of square root finding
 is the problem of finding a member of $B_\eps$.
@@ -251,7 +265,7 @@ and simplify:
 \end{align}
 \noindent which implies,
 by pattern-matching to \defref{gradient},
-that the gradient of $g$ is
+that the gradient function of $g$ is
 \begin{equation}\equationlabel{gnm-grad}
 	\grad{g}{\theta} = \hess{L}{\theta}\grad{L}{\theta}
 \end{equation}
@@ -1069,7 +1083,7 @@ defined below.
 \begin{definition}{Krylov Subspace Methods}{krylov}
 	Let $M$ be a matrix in $\R^{N\times N}$
 	and $x$ be a vector in $\R^N$.
-	The emph{Krylov subspace}
+	The \emph{Krylov subspace}
 	of order $r$
 	for $M$ and $x$, denoted
 	$\cK_r\left(M, x\right)$,
@@ -1257,8 +1271,9 @@ Since the Newton step is motivated by a local analysis,
 this is undesirable.
 Therefore,
 we consider a finite number of possible perturbations\footnote{%
-We denote the set of all finite subsets of a set $S$ as
-$\cP_\omega(S)$},
+Denoting the set of all finite subsets of a set $S$ as
+$\cP_\omega(S)$, the type of $\Gamma$ is written
+$\Gamma \in \cP_\omega\left(\R_{\geq 0}\right)$},
 $\Gamma = \Set{\gamma_i : \gamma_i \in \R_{\geq 0}}$
 and produce a Newton step for each one,
 with the Hessian matrix $H$ replaced by
@@ -1515,7 +1530,8 @@ Details on the definitions of these quantities
 are deferred to \chapterref{three}.
 Not listed above is the \texttt{trancond} hyperparameter,
 which determines when the algorithm transitions between
-using the QR and QLP decompositions.
+using the QR and QLP decompositions,
+based on an estimate of the Hessian's condition number.
 We set this to 1e4.
 
 \section{Conclusion}\sectionlabel{ch2-conclusion}
