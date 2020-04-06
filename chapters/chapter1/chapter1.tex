@@ -695,8 +695,9 @@ When the value of the loss is low,
 we might expect that the probability of a positive eigenvalue becomes 1,
 while when the value of the loss is high,
 negative and positive values are both possible.
-A random function drawn according to these rules
-will have the NBLM property.
+A random loss function drawn according to these rules
+will have the NBLM property with a probability that
+rapidly increases with dimension.
 
 In \sectionref{grf},
 we will cover the first model of neural network loss functions
@@ -754,11 +755,15 @@ have the same property.
 	A random function $f$ from $\R^k\to\R$ is a \emph{Gaussian random field}
 	if the random variable $w^\top f^{\otimes n}(x_1 \dots x_n)$
 	is Gaussian-distributed
-	for all $w\in\R^n, x_i \in\R^k$.
+	for all $w\in\R^n, x_i \in\R^k$
+	and for every $n \in \N$.
 \end{definition}
 \noindent Here $f^{\otimes n}$ is the $n$-fold product of the function $f$,
 which applies the function $f$ to $n$ separate inputs,
-returning $n$ outputs.
+returning $n$ outputs\footnote{%
+Specifically,
+$f^{\otimes n}{\left(x_1, \dots, x_n\right)}_i = f\left(x_i\right)$
+for all $i$ from $1$ to $n$.}.
 
 There is one example of a Gaussian random field
 that is familiar to machine learning practitioners:
@@ -816,6 +821,8 @@ we would like a statistical description of these critical points.
 	\end{center}
 	\caption%
 	{\textbf{2-Dimensional Gaussian Random Field}.}
+	{Note that this is a single realization of a Gaussian random field,
+	akin to a single observation of a random variable.}
 	\figurelabel{2dgrf}
 \end{figure}
 
@@ -919,6 +926,7 @@ the symmetric Wigner random matrices.
 	defined in the second block,
 	may have a different
 	distribution than the entries off the diagonal,
+	defined in the first block,
 	but both groups are iid.
 \end{definition}
 
@@ -972,7 +980,8 @@ We can now be a bit more specific about the results of~\cite{bray2007}.
 They found that the Hessian spectra of
 critical points of Gaussian random fields
 have $\gamma$-shifted Wigner semicircular distributions
-whose shift parameter $\gamma$ depends on the value of the random field.
+whose shift parameter $\gamma$ depends on the value of the random field
+at that critical point.
 This gives an index that is similarly dependent.
 
 How well does this spectrum match up against the observed eigenvalues
