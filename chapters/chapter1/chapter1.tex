@@ -79,7 +79,7 @@ stubbornly refused to decrease.
 The algorithms used to find critical points are complicated ---
 both in terms of their implementation and
 in terms of the number of knobs, or hyperparameters,
-we can to twiddle to configure them.
+we can twiddle to configure them.
 Furthermore, they behave quite differently
 from typical machine learning algorithms,
 and so intuition gained from experience working with those algorithms
@@ -155,7 +155,10 @@ with (optionally parameterized) non-linear transformations.
 In order to be able to apply calculus
 to our networks, we will assume that
 the parameters are stored in a vector, $\theta$,
-and converted into a function by a network constructor
+and converted into a function by a network constructor%
+\footnote{%
+The notation for this setup is summarized in \tableref{loss-notation}.
+}
 $\mathrm{NN}$:
 \begin{equation}
 	\mathrm{NN}(\theta) \from \cX \to \cY
@@ -185,7 +188,6 @@ and is defined below.
 			c(\mathrm{NN}(\theta)(x_i), y_i) + r(\theta)
 	\end{equation}
 \end{definition}
-The notation for this setup is summarized in \tableref{loss-notation}.
 Note that,
 because the parameters are the thing over which we have control,
 we think of this as a function of the parameters $\theta$,
@@ -210,7 +212,7 @@ after applying each in turn:
 			\textbf{Name}       & \textbf{Type}                          \\
 			Inputs              & $X \from \cX^n \defeq \R^{m\times n}$  \\
 			Targets, Outputs    & $Y \from \cY^n \defeq \R^{p\times n}$  \\
-			Parameters          & $\theta \from \Theta \cong \R^N$        \\
+			Parameters          & $\theta \from \Theta \defeq \R^N$        \\
 			Loss Function       & $L \from \Theta \to \R$                \\
 			Network Constructor & $\mathrm{NN} \from \Theta \to \cY^\cX$ \\
 			Cost Function       & $c \from \cY \times \cY \to \R$        \\
@@ -222,7 +224,7 @@ after applying each in turn:
 		or, for a function, the types of its inputs and outputs,
 		denoted by $\from$ the input type $\to$ the output type.
 		The symbol $\cY^{\cX}$
-		denotes the set of all functions from the domain $\cX$ to $\cY$.
+		denotes the set of all functions from $\cX$ to $\cY$.
 	}
 	\tablelabel{loss-notation}
 \end{table}
@@ -282,7 +284,8 @@ also known as a first-order Taylor expansion:
 	&\hat{L}(\theta + \eps) = L(\theta) + \langle\grad{L}{\theta},\eps\rangle
 \end{align}
 
-Minimizing $\hat{L}$ would mean selecting an infinitely-long step $\eps$
+Since $\hat{L}$ is unbounded, minimizing it
+would mean selecting an infinitely-long step $\eps$
 in a direction with negative inner product with the gradient.
 But our goal is to minimize $L$, not $\hat{L}$,
 and as $\eps$ grows, so does the approximation error $o(\eps)$,
@@ -319,7 +322,7 @@ any gradient-based algorithm will stay there.
 Below, we will demonstrate that for
 convex smooth functions,
 this algorithm, for an appropriate choice of $\eta$,
-will converge to a minimizer.
+will converge to a minimizer from a random initial point.
 
 Unfortunately,
 neural network loss surfaces are not convex,
@@ -365,7 +368,7 @@ it would seem that all $\theta \in \Theta_{\cp}$
 are also targets of convergence.
 If we initialize \algoref{gd} to one of these points
 ($\theta_{0} \in \Theta_{\cp}$),
-then for $\theta_t = \theta_0$ for all $t$.
+then $\theta_t = \theta_0$ for all $t$.
 Therefore, if initialized from a critical point,
 the algorithm will converge to that critical point.
 
@@ -403,7 +406,7 @@ we have that
 	f(y) &\geq f\left(x_{\cp}\right) + \langle\grad{f}{x_{\cp}}, y - x_{\cp} \rangle\\
 	f(y) &\geq f\left(x_{\cp}\right) + 0 = f\left(x_{\cp}\right)
 \end{align}
-for \emph{any} point $y$,
+for \emph{any} point $y$.
 This is part of the power of convexity:
 local information (encoded in the gradient)
 gives global information (in the form of a global lower bound).
@@ -422,10 +425,10 @@ from \enquote{if-then} to
 Another way to characterize smooth convex functions is through their Hessian function.
 The Hessian function returns matrices that satisfy the relation below:
 \begin{definition}{Hessian Function}{hessian}
-	The \emph{Hessian function} of a function $L \from \Theta \to \R$
-	is a function $\nabla^2{L} \from \Theta \to \R^{N\times N}$,
+	The \emph{Hessian function} of $L \from \Theta \to \R$
+	is denoted $\nabla^2{L} \from \Theta \to \R^{N\times N}$,
 	where $N$ is the dimensionality of $\Theta$,
-	that satisfies
+	is the function that satisfies
 	\begin{equation}\equationlabel{def-hessian}
 		\grad{L}{\theta + \eps} = \grad{L}{\theta} + \hess{L}{\theta}\eps + o(\eps)
 	\end{equation}
@@ -445,7 +448,7 @@ of the original function $L$:
 	L\left(\theta + \eps\right) =
 	L(\theta)
 	+ \langle\grad{L}{\theta},\eps\rangle
-	+ \eps^\top\hess{L}{\theta}\eps + o(\snorm{\eps})
+	+ \frac{1}{2}\eps^\top\hess{L}{\theta}\eps + o(\snorm{\eps})
 \end{equation}
 
 Note that the Hessian appears in~\equationref{taylor-two}
@@ -551,9 +554,9 @@ in~\equationref{taylor-two},
 we see that, at a critical point $\theta_\cp$,
 the first order term vanishes
 \begin{equation}
-	L(\theta_\cp + \eps) = \eps^\top\hess{L}{\theta_\cp}\eps + o(\snorm{\eps})
+	L(\theta_\cp + \eps) = \frac{1}{2}\eps^\top\hess{L}{\theta_\cp}\eps + o(\snorm{\eps})
 \end{equation}
-\noindent leaving only the second-order term.
+\noindent leaving only the terms of second order and above.
 We can therefore classify critical points according to the
 eigenvalue spectrum of their associated Hessian.
 The fraction of negative eigenvalues is known as the
@@ -729,11 +732,13 @@ But with random functions,
 the situation is more complicated,
 because it is difficult to consider densities and integrals over
 the space of functions.
-In addition to necessitating that we typically visualize random functions
-by looking at a single example
-(and hoping that any properties we notice are \enquote{typical}),
-rather than drawing a histogram or density,
-this further necessitates a somewhat strange definition for the Gaussian random field.
+For one, it necessitates that we typically visualize random functions
+by looking at a single example realization,
+as in~\figureref{2dgrf},
+and hoping that any properties we notice are \enquote{typical},
+rather than drawing a histogram or density.
+The difficulty in working with densities
+further necessitates a somewhat strange definition for the Gaussian random field.
 The definition is clearer if we first introduce an analogous definition
 for multivariate Gaussian random variables.
 
@@ -986,11 +991,14 @@ This gives an index that is similarly dependent.
 
 How well does this spectrum match up against the observed eigenvalues
 of neural network loss Hessians?
-The expected distribution is
-continuous with respect to the Lebesgue measure,
-i.e.~it has no atoms, or single points with finite probability mass.
+The expected distribution is a density:
+i.e.~it has no atoms, or single points with finite probability mass,
+as is typical for \enquote{well-behaved} continuous random variables%
+\footnote{In rigorous terms, the distribution is
+\emph{absolutely continuous} with respect to the Lebesgue measure.}.
 In particular, there is no atom at $0$,
-and so the random matrices almost surely have no exactly zero eigenvalues.
+and so the probability that a random matrix has an \emph{exactly}
+zero eigenvalue is $0$.
 This means that their kernel, defined below, consists only of the zero vector,
 and the matrices almost surely have inverses.
 
@@ -1056,6 +1064,10 @@ The expected spectrum of a Wishart random matrix
 follows the Mar{\c c}enko-Pastur distribution
 with parameter $\gamma = \frac{n}{k}$,
 defined below.
+This distribution places non-zero probability mass at $0$,
+and so produces non-invertible matrices.
+It also includes a density over positive values,
+and so its definition is somewhat technically involved.
 A single draw from this ensemble is pictured
 in~\figureref{wishart-rm},
 along with its observed eigenvalue distribution
@@ -1169,7 +1181,6 @@ Non-smooth functions may have local minima
 without having any points where the gradient is $0$,
 as in the Euclidean norm $\norm{v}$,
 which specializes to the absolute value in the one-dimensional case.
-
 Because neural networks rely on gradients for optimization,
 it is typical for activations and costs
 to be differentiable almost everywhere,
@@ -1192,7 +1203,7 @@ e.g.~if the biases are large and negative,
 then the loss is locally constant
 but may have arbitrarily high value.
 Recent work has further shown that,
-if biases are intialized too small,
+if biases are intialized to small values,
 ReLU networks converge to bad local minima%
 ~\cite{holzmller2020}.
 
