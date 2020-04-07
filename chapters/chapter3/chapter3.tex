@@ -1,9 +1,115 @@
 \documentclass[../../thesis.tex]{subfiles}
 
+% chktex-file 18
 \begin{document}
 
-\chapter{Applying Critical Point-Finding Algorithms to Neural Network Loss Surfaces
+\chapter{Applying Critical Point-Finding Algorithms to Neural Network Loss Functions
 Reveals Gradient-Flat Regions}\chapterlabel{three}
+
+\onlyinsubfile{\begin{KeepFromToc}
+		\tableofcontents
+		\listoffigures
+		\listofalgorithms{}
+	\end{KeepFromToc}}
+\onlyinsubfile{\clearpage}
+\onlyinsubfile{\linenumbers}
+
+\section{Chapter Summary}%
+\sectionlabel{ch3-summary}
+
+\chapterref{two} motivated and defined
+a number of second-order algorithms
+for finding the critical points of neural network loss functions.
+As described in \chapterref{one},
+information about the local curvature at these points is useful
+for understanding the optimizability of these neural networks.
+For example, the No-Bad-Local-Minima theory
+(NBLM\@; see \sectionref{nblm}),
+based on a random function model of neural network losses
+(\sectionref{grf}, \sectionref{wishart}),
+predicts that critical points with strictly positive curvature
+should only occur when the value of the loss is low.
+This implies that first-order methods like gradient descent
+can optimize neural networks%
+~\cite{jin2018a}.
+Previous work%
+~\cite{dauphin2014,pennington2017}
+appeared to verify this theory.
+More recent analytical work, however,
+has indicated that the NBLM theory is false,
+and there are in fact bad local minima
+on neural network loss functions
+(\cite{ding2019}; see \sectionref{critic}).
+This disagreement with theory
+motivates a closer look at the numerical evidence,
+which is the substance of this chapter.
+
+First, in \sectionref{dlae},
+we present a test problem,
+the deep linear autoencoder,
+that is analytically tractable
+while remaining sufficiently similar
+to the analytically intractable problem
+of interest, viz.~non-linear networks.
+The analytically-derived critical points
+are used to verify that the approximate critical points
+recovered by the numerical algorithms are accurate.
+Then, we apply the best-performing of these methods,
+Newton-MR, to a non-linear network
+and observe a tremendous change in its behavior:
+qualitative signatures of convergence disappear
+and quantitative metrics sharply decline
+(\sectionref{nonlinear-failure}).
+
+We return, then, to the analysis of second-order
+critical point-finding methods and demonstrate
+that a large class of spurious targets of convergence
+has been over-looked:
+points where the gradient lies in the kernel of the Hessian.
+We call these \emph{gradient-flat points}.
+They are defined in~\sectionref{gfr}.
+We present evidence that these points are encountered
+by critical point-finding methods in~\sectionref{gfr-results}.
+
+These gradient-flat points can be
+bad local minima of the gradient norm.
+The core result of this chapter
+and this dissertation, then,
+is that the second-order methods
+used to find the critical points
+of neural network loss functions
+in an attempt to prove the no-bad-local-minima theory
+suffer from a bad-local-minima problem of their own.
+
+\section{The Deep Linear Autoencoder Provides a Useful Test Problem}%
+\sectionlabel{dlae}
+
+\subsection{The Critical Points of the Deep Linear Autoencoder are Known}%
+\sectionlabel{dlae-cps}
+
+\subsection{Newton-MR Outperforms Previously-Used Methods}%
+\sectionlabel{dlae-results}
+
+\section{Methods that Work on a Linear Network Fail on a Non-Linear Network}%
+\sectionlabel{nonlinear-failure}
+
+\section{Gradient-Flat Regions can Cause Critical Point-Finding Methods to Fail}%
+\sectionlabel{gfr}
+
+\subsection{At Gradient-Flat Points, the Gradient Lies in the Hessian's Kernel}%
+\sectionlabel{def-gfp}
+
+\subsection{Convergence to Gradient-Flat Points Occurs in a Low-Dimensional Quartic Example}%
+\sectionlabel{toy}
+
+\subsection{Approximate Gradient-Flat Points Form Gradient-Flat Regions}%
+\sectionlabel{def-gfr}
+
+\section{Gradient-Flat Regions Abound on Several Neural Network Losses}%
+\sectionlabel{gfr-results}
+
+\section{Conclusion}%
+\sectionlabel{conclusion}
 
 \onlyinsubfile{\printbibliography}
 
