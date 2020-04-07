@@ -1404,12 +1404,12 @@ is \emph{back-tracking line search}%
 ~\cite{armijo1966},
 abbreviated BTLS.\@
 
-In a line search, the step size $\eta^\star{}$
+In a line search, the step size $\alpha^\star{}$
 for a direction $p$ at a point $\theta$
 is cast as the solution to an optimization problem:
 \begin{equation}
-	\eta^\star{}
-	\defeq \argmin_{\eta \in \R_{\geq 0}} c(\theta + \eta p)
+	\alpha^\star{}
+	\defeq \argmin_{\alpha \in \R_{\geq 0}} c(\theta + \alpha p)
 \end{equation}
 \noindent for some merit function $c$.
 When selecting a step size for a typical optimization problem,
@@ -1428,15 +1428,72 @@ $\alpha \times \beta^k$
 produces insufficient decrease in the merit function $c$.
 The degree of decrease considered sufficient
 is typically an increasing function of the step size
-and controlled by another hyperparameter $0 < \rho < 1$.
+and controlled by another \enquote{tolerance} hyperparameter
+$0 < \rho < 1$.
 The authors of~\cite{roosta2018}
 determined the appropriate criterion for decrease
 in the case where $c$ is the squared gradient norm
 by considering the case of a function with constant Hessian.
-Effectively, a step size $\eta$ is chosen
+Effectively, a step size is chosen
 when the squared gradient norm decreases by an amount within
 a factor of $\rho$ of how much it would decrease
 in that case.
+
+\begin{figure}[Hp!]
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{img/chapter2/btls.pdf}
+	\end{center}
+	\caption{\textbf{Back-Tracking Line Search
+	for Guarded Newton}}{%
+	\textbf{A}:
+	$f(\theta) = \|\theta\|^{3/2}$
+	is plotted as a solid gold line,
+	and its second-order Taylor approximation
+	from the point $-1$ as a dashed blue line.
+	Values of $\theta$ that result in
+	sufficient decrease of the squared gradient
+	with the tolerance parameter $\rho=0.2$
+	indicated in dark red.
+	The point selected by BTLS
+	with $\beta=0.9$ indicated with a gold star.
+	\textbf{B}:
+	The squared gradient of $f$ is plotted as a
+	solid gold line.
+	The sufficient decrease criterion that appears
+	in the line search convergence check in \algoref{roosta-btls}
+	is plotted as a dashed gray line.
+	Values of $\theta$ that result in squared gradients
+	below this line in dark red.
+	Tick marks indicate points possibly visited
+	by the back-tracking line search.
+	Hyperparameters as in $A$.
+	}
+	\figurelabel{btls}
+\end{figure}
+
+It is instructive to consider a concrete example.
+The behavior of pure Newton and
+guarded Newton on the function
+$f(\theta) = \|\theta\|^{3/2}$
+are contrasted in~\figureref{btls}.
+Starting at the point $\theta_0=-1$,
+(gold circle)
+the pure Newton iteration $\theta_1 + p^\star$
+(blue star)
+is $1$, which results in oscillation:
+$\theta_2=1, \theta_3=-1=\theta_0$.
+Back-tracking line search avoids this pathology.
+Only step sizes that result in values of $\theta$
+that decrease the squared gradient by a sufficient amount
+(below dashed gray line in \figureref{btls}B)
+are acceptable.
+These values of $\theta$ are indicated in dark red.
+Back-tracking line search starts at the pure Newton step
+and decreases its length by a multiplicative factor
+(black ticks)
+until it lands inside the red region.
+The result is the next iterate,
+$\theta_1$ (gold star).
 
 We present a back-tracking line search
 appropriate for selecting Newton step sizes
@@ -1489,7 +1546,7 @@ $\alpha = \beta\alpha$.
 	\If{$\alpha < \eps$}{\alpha \leftarrow 0\;\\ \KwRet\ \alpha\;\\}}
     }%
     $\KwRet\ \alpha$%
-    \caption{Backtracking Line Search for Newton}
+    \caption{Backtracking Line Search for Guarded Newton}
     \algolabel{roosta-btls}
 \end{algorithm}
 
