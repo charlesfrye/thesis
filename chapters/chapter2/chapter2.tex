@@ -274,7 +274,7 @@ that the gradient function of $g$ is
 The minimal form of gradient norm minimization
 applies \algoref{gd} with these gradients,
 giving rise to \algoref{gnm}.
-
+\\
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -338,10 +338,12 @@ is smaller (larger) than a square with sides of length $\theta$,
 then it is larger (smaller) than the square with sides of length $x \div \theta$.
 In either case, the square with sides equal in length to the average
 of $\theta$ and $x \div \theta$
-is closer in area to $x$.
+is closer in area to $x$
+(see \figureref{babylon}).
+Therefore, its side length is a closer approximation to $\sqrt{x}$.
 This improvement can be applied iteratively,
 yielding the below algorithm:
-
+\\
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -359,6 +361,40 @@ does not have an exact finite-time algorithm.
 This is also true of $\div$, which appears in \algoref{babylon}.
 We will come back to this in \sectionref{div},
 in order to better understand inexact Newton methods.
+Note that this algorithm converges extremely quickly,
+as indicated by \figureref{babylon}B-C.
+The error goes from order 1 to order 1e-10
+in just 5 iterations, then drops to $0$.
+
+\begin{figure}[ht]
+	\begin{center}
+		\includegraphics[width=\textwidth]{img/chapter2/babylon.pdf}
+	\end{center}
+	\caption{\textbf{The Babylonian Algorithm
+	for Computing Square Roots}}{%
+	\textbf{A}:
+	Depiction of geometric intuition for the method.
+	The square with side length $\theta_t$ (gold)
+	is larger than that
+	with side length $\sqrt{x}$ and area $x$ (black),
+	while that with side length
+	$x \div \theta_t$ (blue) is smaller.
+	The average of these two values is the value $\theta_{t+1}$,
+	which results in a square closer in area to $x$ (red).
+	\textbf{B}:
+	Value of $\theta$ across iterations of \algoref{babylon}
+	for arguments $T=6$, $x = 4$, and $\theta_0=0.8$.
+	The value of $4$ was chosen because the exact square root is known,
+	unlike e.g.~$2$.
+	The iterations indicated by color correspond to values in \emph{A}.
+	$x$-axis is shared with \emph{C}.
+	\textbf{C}:
+	Absolute value of the difference between $\theta_t$ and $\sqrt{x}$
+	for Babylonian algorithm as in \emph{B}, plotted on log-scale.
+	Difference at iteration $6$ is $0$, and so is plotted off the chart.
+	}
+	\figurelabel{babylon}
+\end{figure}
 
 \subsection{Newton-Raphson}\sectionlabel{newton}
 
@@ -393,7 +429,7 @@ the equivalent of $f$ is a vector and already a gradient,
 and so $\nabla f$ becomes the Hessian matrix
 and the scalar division becomes multiplication by an inverse matrix.
 The resulting algorithm is as follows:
-
+\\
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -496,6 +532,12 @@ which has at best linear improvement:
 with each iteration, the number of bits of precision increases by a fixed amount%
 \footnote{Again, in terms of the error, this is much faster:
 it is exponential.}.
+This rapid convergence is visible in
+\figureref{babylon}C,
+where the quality of the solution doubles,
+from approximately 1e-5
+to approximately 1e-10,
+between iterations $4$ and $5$.
 
 \subsection{Pseudo-Inverse Newton}\sectionlabel{pseudoinverse}
 
@@ -621,7 +663,8 @@ before connecting to the SVD.\@
 	\enquote{False} otherwise.
 	This function can be decomposed as
 	\begin{equation}
-		\texttt{is\_odd} = \texttt{to\_string} \after \texttt{to\_bool} \after {\%}_2
+		\texttt{is\_odd} =
+		\texttt{to\_string} \after \texttt{to\_bool} \after {\%}_2
 	\end{equation}
 	where $\%_2\from\N \onto \Set{0, 1}$
 	computes the value mod $2$ and
@@ -637,20 +680,21 @@ before connecting to the SVD.\@
 			     \top  & 	\text{if } k = 1
 			\end{cases}
 	\end{equation*}
-	This is summarized neatly by the commutative diagram below:
-	\begin{center}
-	    \begin{tikzcd}
-		    \N \arrow[rr, "\texttt{is\_odd}"] \arrow[dd, "\%_2", two heads]
-		    &  & \cS\\
-		\ & \  & \\
-		\Set{0, 1} \arrow[rr, "\texttt{to\_bool}"]
-		&  & \mathbb{B} \arrow[uu, "\texttt{to\_string}", harpoon, hook]
-	    \end{tikzcd}
-	\end{center}
-	Saying that this diagram \emph{commutes}
-	is saying that any path from one domain to another
-	results in the same function.
 \end{example}
+
+This decomposition is summarized neatly by the commutative diagram below:
+\begin{center}
+    \begin{tikzcd}
+	    \N \arrow[rr, "\texttt{is\_odd}"] \arrow[dd, "\%_2", two heads]
+	    &  & \cS\\
+	\ & \  & \\
+	\Set{0, 1} \arrow[rr, "\texttt{to\_bool}"]
+	&  & \mathbb{B} \arrow[uu, "\texttt{to\_string}", harpoon, hook]
+    \end{tikzcd}
+\end{center}
+Saying that this is a commutative diagram
+means that any path from one domain to another
+results in the same function.
 
 Now, let us view the SVD through this lens.
 First, $V^\top$ is a surjection because
@@ -686,18 +730,14 @@ We first define it for two simple classes of matrices,
 then extend it for all matrices by means of the SVD.\@
 
 \begin{definition}{Moore-Penrose Pseudo-Inverse}{pseudoinverse}
-	Let $O$ be an orthogonal matrix.
-	We define the pseudo-inverse of $O$,
-	denoted $\pinv{O}$, as
-	\begin{equation}
-		\pinv{O} \defeq O^{\top}
-	\end{equation}
-
-	Let $D$ be a diagonal matrix of full rank.
-	We define the pseudo-inverse of $D$ as
-	\begin{equation}
-		\pinv{D} \defeq \inv{D}
-	\end{equation}
+	Let $O$ be an orthogonal matrix
+	and let $D$ be a diagonal matrix of full rank.
+	We define the pseudo-inverses of $O$ and $D$,
+	denoted $\pinv{O}$ and $\pinv{D}$, as
+	\begin{align}
+		\pinv{O} \defeq O^{\top},\
+		& \pinv{D} \defeq \inv{D}
+	\end{align}
 
 	Let $M$ be a matrix in $\R^{m \times n}$
 	and let its singular value decomposition be the triple
@@ -709,19 +749,20 @@ then extend it for all matrices by means of the SVD.\@
 		&\defeq \pinv{\left(V^{\top}\right)}\pinv{\Sigma}\pinv{U}\\
 		&= V \inv{\Sigma} U^\top
 	\end{align}
-	This is sometimes known as the Moore-Penrose pseudo-inverse.
-	The relationships between these matrices
-	are summarized by the commutative diagram below.
-	\begin{center}
-	    \begin{tikzcd}
-		    \R^n \arrow[rr, "M", bend left] \arrow[dd, "V^\top", swap, two heads, bend right]
-		    &  & \R^m \arrow[dd, "U^\top", swap, two heads, bend right] \arrow[ll, "M^+", dotted, bend left]                       \\
-		\ & \  & \\
-		\co \ker M \arrow[uu, "V", harpoon, hook, bend right]  \arrow[rr, "\Sigma", bend right]
-		&  & \im M \arrow[uu, "U", harpoon, hook, bend right] \arrow[ll, "\inv{\Sigma}", bend right]
-	    \end{tikzcd}
-	\end{center}
 \end{definition}
+
+This is sometimes known as the Moore-Penrose pseudo-inverse.
+The relationships between these matrices
+are summarized by the commutative diagram below.
+\begin{center}
+    \begin{tikzcd}
+	    \R^n \arrow[rr, "M", bend left] \arrow[dd, "V^\top", swap, two heads, bend right]
+	    &  & \R^m \arrow[dd, "U^\top", swap, two heads, bend right] \arrow[ll, "M^+", dotted, bend left]                       \\
+	\ & \  & \\
+	\co \ker M \arrow[uu, "V", harpoon, hook, bend right]  \arrow[rr, "\Sigma", bend right]
+	&  & \im M \arrow[uu, "U", harpoon, hook, bend right] \arrow[ll, "\inv{\Sigma}", bend right]
+    \end{tikzcd}
+\end{center}
 
 
 \subsubsection{Defining Pseudo-Inverse Newton}
@@ -736,7 +777,7 @@ to $-g$ to obtain a vector that is the pre-image of $-g$
 with respect to the Hessian.
 We choose this as our update,
 obtaining the algorithm below.
-
+\\
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -853,7 +894,7 @@ multiplication and subtraction:
 	&= \gamma_k \times \left(2 - \gamma_k \times \theta_t\right)
 \end{align}
 \noindent which results in the approximate inverse algorithm below:
-
+\\
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -901,7 +942,7 @@ as described in~\sectionref{sqrt}.
 We can therefore re-write our
 exact Newton algorithms
 in terms of this $\argmin$ operation.
-
+\\
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -928,7 +969,7 @@ If we relax the requirement to compute the exact $\argmin$,
 which cannot be satisfied in a numerical setting anyway,
 we obtain a new meta-algorithm,
 which we call \emph{least-squares inexact Newton}.
-
+\\
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -1001,7 +1042,7 @@ and we will have more to say about this case in~\chapterref{three}.
 When the Newton system is unsatisfiable
 the updates are not solutions,
 but merely elements of the $\argmin$ in \equationref{newton-ls}.
-
+\\
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -1147,7 +1188,7 @@ $\cK_K$, but practical algorithms
 would iteratively determine  the Krylov subspace
 based on numerical considerations,
 e.g.~norm of the residual or the solution.
-
+\\
 \begin{algorithm}[H]
     \SetAlgoLined{}
     \textbf{Require}
@@ -1288,7 +1329,7 @@ based on the exact minimum residual Newton method,
 Damping can be combined with any method for computing
 the Newton iteration, and is compatible
 with fast Hessian-vector products.
-
+\\
 \begin{algorithm}[h]
     \SetAlgoLined{}
     \textbf{Require}
@@ -1383,7 +1424,7 @@ $0 < \alpha \leq 1$
 and then decreasing it multiplicatively by a factor $0 < \beta < 1$
 on each failed iteration.
 A failed iteration $k$ is one where the step size choice
-$\alpha \time \beta^k$
+$\alpha \times \beta^k$
 produces insufficient decrease in the merit function $c$.
 The degree of decrease considered sufficient
 is typically an increasing function of the step size
@@ -1412,10 +1453,9 @@ used in the BTLS, $\rho$.
 Finally,
 we allow the specification of a minimum step size, $\eps$,
 below which $\alpha$ is set to $0$.
-In a numerical setting,
-this is set to the largest value for which
+We set this to the largest value for which
 $\alpha = \beta\alpha$.
-
+\\
 \begin{algorithm}[h]
     \SetAlgoLined{}
     \textbf{Require}
@@ -1440,12 +1480,13 @@ $\alpha = \beta\alpha$.
     \;
     converged $\leftarrow \texttt{CheckConvergence}\left(
     	1, \rho^\prime\right)$\;
-    \If{$\mathrm{converged}$}{$\alpha \leftarrow 1$}
+    \If{$\mathrm{converged}$}{$\alpha \leftarrow 1$\;
+    $\KwRet\ \alpha$}
     \While{$\mathrm{not\ converged}$}{%
         converged $\leftarrow \texttt{CheckConvergence}\left(
             \alpha, \rho\right)$\;
         \If{$\mathrm{not\ converged}$}{$\alpha \leftarrow \beta \alpha$\;
-	\If{$\alpha < \eps$}{\alpha \leftarrow 0\;\textbf{break}\;}}
+	\If{$\alpha < \eps$}{\alpha \leftarrow 0\;\\ \KwRet\ \alpha\;\\}}
     }%
     $\KwRet\ \alpha$%
     \caption{Backtracking Line Search for Newton}
@@ -1465,7 +1506,7 @@ algorithm for critical point-finding in
 \chapterref{three},
 so we provide it in pseudocode here
 (\algoref{nmr}).
-
+\\
 \begin{algorithm}[h]
     \SetAlgoLined{}
     \textbf{Require}
@@ -1492,6 +1533,7 @@ so we provide it in pseudocode here
             \nabla f, p, \theta_t, \alpha, \beta, \rho, \rho^\prime\right)$\\
         $\theta_{t+1} \leftarrow \theta_t + \alpha p$\\
 	\If{$\theta_{t+1} == \theta_{t}$}{\textbf{break}\\}
+	$\alpha \leftarrow \max(1, \beta^{-1} \alpha)$\\
         $t \leftarrow t + 1$
     }%
     \caption{Newton-MR}
@@ -1532,7 +1574,9 @@ Not listed above is the \texttt{trancond} hyperparameter,
 which determines when the algorithm transitions between
 using the QR and QLP decompositions,
 based on an estimate of the Hessian's condition number.
-We set this to 1e4.
+This hyperparameter was also not critical
+for determining stopping behavior of MR-QLP\@.
+We set it to 1e4.
 
 \section{Conclusion}\sectionlabel{ch2-conclusion}
 
@@ -1544,6 +1588,9 @@ to the squared gradient norm,
 and
 Newton methods,
 which use repeated solution of the Newton system of equations.
+Both classes of algorithms
+use the Hessian matrix of second partial derivatives,
+and so are second-order critical point-finding methods.
 In part because of the complexity of Newton methods
 and in part because of the relative lack of experience and expertise
 with these methods in the neural network community,
@@ -1568,7 +1615,8 @@ we apply these methods to non-linear neural networks.
 In this case, they will generally fail
 to find critical points,
 which will motivate a re-analysis
-of their behavior when the Hessian is singular.
+of the behavior second-order critical point-finding algorithms
+when the Hessian is singular.
 
 \onlyinsubfile{\printbibliography}
 
