@@ -1580,7 +1580,8 @@ so we provide it in pseudocode here
     $\alpha \in \intervaloc{0}{1}$,
     $\beta \in (0, 1)$,
     $\rho \in (0, 1)$,
-    $\rho^\prime \in (0, 1)$\\ \ \\
+    $\rho^\prime \in (0, 1)$,
+    $\eps \in \R_{\geq 0}$\\ \ \\
     $t \leftarrow 0$\\
     \While{$t < T$}{%
         $g \leftarrow \nabla{f}\left(\theta_t\right)$\\
@@ -1588,7 +1589,7 @@ so we provide it in pseudocode here
         $p \leftarrow \textrm{MR-QLP}\left(
             H,\ -g,\ \texttt{maxit},\ \texttt{maxxnorm},\ \texttt{rtol},\ \texttt{acondlim}\right)$\\
         $\alpha \leftarrow \textrm{BTLS}\left(
-            \nabla f, p, \theta_t, \alpha, \beta, \rho, \rho^\prime\right)$\\
+            \nabla f, p, \theta_t, \alpha, \beta, \rho, \rho^\prime, \eps\right)$\\
         $\theta_{t+1} \leftarrow \theta_t + \alpha p$\\
 	\If{$\theta_{t+1} == \theta_{t}$}{\textbf{break}\\}
 	$\alpha \leftarrow \max(1, \beta^{-1} \alpha)$\\
