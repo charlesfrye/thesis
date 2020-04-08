@@ -209,10 +209,10 @@ after applying each in turn:
 \begin{table}[h]
 	\begin{center}
 		\begin{tabular}{rl}
-			\textbf{Name}       & \textbf{Type}                          \\
+			\textbf{Name}       & \textbf{Symbol} : \textbf{Type}        \\ %chktex 26
 			Inputs              & $X \from \cX^n \defeq \R^{m\times n}$  \\
 			Targets, Outputs    & $Y \from \cY^n \defeq \R^{p\times n}$  \\
-			Parameters          & $\theta \from \Theta \defeq \R^N$        \\
+			Parameters          & $\theta \from \Theta \defeq \R^N$      \\
 			Loss Function       & $L \from \Theta \to \R$                \\
 			Network Constructor & $\mathrm{NN} \from \Theta \to \cY^\cX$ \\
 			Cost Function       & $c \from \cY \times \cY \to \R$        \\
@@ -222,7 +222,7 @@ after applying each in turn:
 	\caption{\textbf{Definitions of Terms and Symbols for Neural Network Loss Functions}.}{%
 		The \enquote{type} of an object is either set of which it is an element
 		or, for a function, the types of its inputs and outputs,
-		denoted by $\from$ the input type $\to$ the output type.
+		denoted by input type $\to$ output type.
 		The symbol $\cY^{\cX}$
 		denotes the set of all functions from $\cX$ to $\cY$.
 	}
