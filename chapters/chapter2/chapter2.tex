@@ -289,8 +289,8 @@ giving rise to \algoref{gnm}.
 	$\theta_{t+1} \leftarrow \theta_t - \alpha Hg$\\
 	$t \leftarrow t + 1$
     }%
-    \algolabel{gnm}
     \caption{Gradient Norm Minimization by Gradient Descent}
+    \algolabel{gnm}
 \end{algorithm}
 
 However, one advantage of the gradient norm minimization approach
@@ -353,8 +353,8 @@ yielding the below algorithm:
     \While{$t < T$}{%
 	    $\theta_{t+1} \leftarrow \frac{\theta_t}{2} + \frac{x \div \theta_t}{2}$
     }%
-    \algolabel{babylon}
     \caption{Babylonian Algorithm}
+    \algolabel{babylon}
 \end{algorithm}
 \noindent Recall that the motivation for considering the square root problem
 was that $\sqrt{}$, unlike $+$ and $\times$,
@@ -444,8 +444,8 @@ The resulting algorithm is as follows:
 	$\theta_{t+1} \leftarrow \theta_t - \inv{H}g$\\
 	$t \leftarrow t + 1$
     }%
-    \algolabel{newton}
     \caption{Newton-Raphson}
+    \algolabel{newton}
 \end{algorithm}
 
 While the problem setup here was for equation solving,
@@ -792,8 +792,8 @@ obtaining the algorithm below.
 	$\theta_{t+1} \leftarrow \theta_t - \pinv{H}g$\\
 	$t \leftarrow t + 1$
     }%
-    \algolabel{newtonPI}
     \caption{Pseudo-Inverse Newton}
+    \algolabel{newtonPI}
 \end{algorithm}
 
 We will return to the problem of what happens
@@ -906,8 +906,8 @@ multiplication and subtraction:
 	    \leftarrow \gamma_k \times \left(2 - \gamma_k \times \theta\right)$\\
 	    $k \leftarrow k + 1$
     }%
-    \algolabel{newtoninv}
     \caption{Newton Inversion}
+    \algolabel{newtoninv}
 \end{algorithm}
 
 Our full square-root finding algorithm, then,
@@ -958,8 +958,8 @@ in terms of this $\argmin$ operation.
 	$\theta_{t+1} \leftarrow \theta_t + p^\star{}$\\
 	$t \leftarrow t + 1$
     }%
-    \algolabel{newtonLS}
     \caption{Least-Squares Exact Newton}
+    \algolabel{newtonLS}
 \end{algorithm}
 
 Our two exact Newton methods above
@@ -984,8 +984,8 @@ which we call \emph{least-squares inexact Newton}.
 	$\theta_{t+1} \leftarrow \theta_t + p$\\
 	$t \leftarrow t + 1$
     }%
-    \algolabel{newtonLS}
     \caption{Least-Squares Inexact Newton}
+    \algolabel{newtonLS}
 \end{algorithm}
 
 Here, lsq-solve is a function
@@ -1059,8 +1059,8 @@ but merely elements of the $\argmin$ in \equationref{newton-ls}.
 	$\theta_{t+1} \leftarrow \theta_t + p^\star{}$\\
 	$t \leftarrow t + 1$
     }%
-    \algolabel{newtonLS-incompatible}
     \caption{Least-Squares Exact Newton for Incompatible Systems}
+    \algolabel{newtonLS-incompatible}
 \end{algorithm}
 
 \subsection{Krylov Subspace Methods for Least-Squares Inexact Newton}\sectionlabel{krylov}
@@ -1207,8 +1207,8 @@ e.g.~norm of the residual or the solution.
 	$\theta_{t+1} \leftarrow \theta_t + p^\star{}$\\
 	$t \leftarrow t + 1$
     }%
-    \algolabel{newton-minres}
     \caption{Minimum Residual Newton for Incompatible Systems}
+    \algolabel{newton-minres}
 \end{algorithm}
 
 There are two major linear solvers
@@ -1324,11 +1324,11 @@ Here, $I$ is the identity matrix of
 the same shape as $H$.
 
 We provide an example damped Newton method below,
-in \algoref{damped-newton}
+in \algoref{damped-newton},
 based on the exact minimum residual Newton method,
 \algoref{newton-minres}.
 Damping can be combined with any method for computing
-the Newton iteration, and is compatible
+the Newton iteration and is compatible
 with fast Hessian-vector products.
 \\
 \begin{algorithm}[h]
@@ -1352,8 +1352,8 @@ with fast Hessian-vector products.
 	$\theta_{t+1} \leftarrow \theta_t + p^\star{}$\\
 	$t \leftarrow t + 1$
     }%
-    \algolabel{damped-newton}
     \caption{Minimum Residual Damped Newton Method}
+    \algolabel{damped-newton}
 \end{algorithm}
 
 Damping methods are, however,
