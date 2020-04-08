@@ -113,6 +113,9 @@ by gradient descent plus back-tracking line search.
 (\algoref{gnm})
 are compared.
 
+Additional results regarding these critical point-finding methods
+and the deep linear autoencoder are
+published in~\cite{frye2019}.
 
 \subsection{Test Problems are Necessary}%
 \sectionlabel{test}
@@ -296,7 +299,7 @@ and applying the Euclidean inner product,
 i.e.~as a pullback of that inner product via the raveling isomorphism.
 The trace $\tr$ is invariant to cyclic permutations,
 and so we can re-organize the middle term of
-\eqnref{taylor-collapsed-loss}
+\equationref{taylor-collapsed-loss}
 to better match the definition of the gradient function.
 \begin{align}
 	\langle \grad{\cL}{W}, W_{k+1:} \eps W_{:k}\rangle
@@ -353,7 +356,8 @@ The critical points of this network can be characterized as follows:
 Before diving into the proof,
 we first consider the interpretation and implications.
 The matrix $XX^\top$ is the
-sample covariance matrix of the data $X$.
+sample covariance matrix of the data $X$
+when the data has sample mean $0$.
 The eigenvectors of this matrix are known as the
 \emph{principal components}
 of the data.
@@ -475,23 +479,594 @@ at a critical point of the loss,
 $W_2W_1$ acts as the identity
 on a subspace spanned by some subset of the eigenvectors of $XX^\top$.
 
-\subsection{Newton-MR Outperforms Previously-Used Methods}%
+\subsection{Newton-MR Outperforms Previously-Used Methods on this Problem}%
 \sectionlabel{dlae-results}
+
+We are now ready to set up the deep linear autoencoder
+test problem and compare the performance of our
+critical point-finding algorithms.
+
+\subsubsection{Data and Network}\sectionlabel{dlae-parameters}
+
+\thmref{dlae-cps} gives a characterization
+of the set of all critical points, $\Theta_{\cp}$,
+for a given choice of dataset $X\in\R^{k \times n}$ and two-layer network.
+The key parameters for the dataset are its covariance matrix,
+dimension $k$, and size $n$.
+The key architectural hyperparameter of the network is the
+size of the hidden layer
+($p$, as in \thmref{dlae-cps}).
+
+For simplicity, we choose a multivariate Gaussian distribution
+for the columns of $X$,
+as this distribution is entirely specified by its mean and covariance.
+The connection to PCA
+required that $XX^\top$ be the sample covariance matrix of $X$,
+and so we enforce that $X$ has row mean exactly $0$.
+Note that this must be done after sampling,
+as setting the distributional mean to $0$ does not
+result in a row mean sufficiently close to $0$.
+We choose a diagonal covariance matrix.
+To obtain maximally-spaced eigenvalues while still
+controlling the condition number of $XX^\top$,
+we space the diagonal values linearly between $1$ and $k$,
+inclusive.
+We choose $n$, the number of samples, to be $1e4$.
+
+The parameters $k$, for the dimension of the data,
+and $p$, for the dimension of the hidden layer of the neural network,
+directly determine the number of critical points,
+up to equivalence.
+Since this count is effectively
+given by the number of ways to choose subsets from a set of size $k$,
+it grows nearly as fast as $2^k$.
+For this reason, we choose $k$ to be small, relative to the typical
+inputs to neural networks: $16$, as opposed to order $100$ or $1000$.
+Selecting $p$ also to be small, specifically $4$,
+gives a total number of equivalence classes of critical points equal to
+$2517 = \sum_{i=0}^4 \binom{16}{i}$.
+Below, we will call the set of all representatives of the
+equivalence classes the \emph{analytical critical points}
+of the deep linear autoencoder.
+
+With all of these choices in place,
+we can now calculate the loss and index values of the analytical
+critical points for a neural network loss surface.
+These are plotted in \figureref{dlae-cps}.
+The squared gradient norms of these points are generally not $0$,
+but on the order of 1e-32.
+Already, this provides a loose lower bound on the precision we need
+in order to recover critical points.
+There is one notable exception:
+the $0$ vector, which is a critical point for this loss.
+Here, the gradient is exactly $0$.
+In general, the density of floating point numbers is greatest near $0$,
+and so critical points near $0$ can be recovered with greater accuracy.
+Note that, in a numerical setting,
+the index is defined as the number of eigenvalues
+below some small negative value, rather than $0$,
+to account for error.
+We choose -1e-5,
+based on inspection of the spectra of these
+analytical critical points.
+
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{img/chapter3/dlae-cps.pdf}
+	\end{center}
+	\caption{\textbf{The Analytical Critical Points
+	of a Deep Linear Autoencoder}}
+	\figurelabel{dlae-cps}
+\end{figure}
+
+\subsubsection{Two-Step Process for Sampling Critical Points}%
+\sectionlabel{dlae-sampling}
+
+The full set of critical points, $\Theta_{\cp}$,
+is uncountably infinite in size,
+as is the full set of $\eps$-critical points,
+$\Theta_{\ecp}$.
+Even the set of critical points up to equivalence is exponentially large.
+For a problem as small as this one, it might be feasible to find all of them,
+but for larger networks this won't be the case.
+Instead, our methods must aim to sample the set of critical points.
+If the sample is unbiased, qualitative and quantitative features
+of the loss-index relationship
+(\figureref{dlae-cps})
+should be preserved.
+
+To obtain initial points for our critical point-finding methods,
+we first apply an optimization algorithm to the loss.
+This generates a trajectory of values of $\theta$ with varying loss,
+from near the value of the highest critical point
+to near the value of the global minimum.
+These values are then chosen as initial points
+for critical point-finding algorithms.
+We follow~\cite{pennington2017} in selecting these points
+uniformly at random based on their loss value.
+Due to the exponential rate of first-order optimization algorithms,
+selecting points uniformly at random from the trajectory
+would over-represent lower loss values.
+Furthermore, decreasing gradient norms during training mean that
+later parameter values are closer together,
+and so this scheme would heavily over-sample a small region.
+Both factors should reduce the variety in recovered critical points%
+\footnote{These approaches are directly compared in~\cite{frye2019}
+and this intuition is borne out.}.
+
+\subsubsection{Critical Point-Finding Methods Have Differential Performance}%
+\sectionlabel{dlae-perf-comparison}
+
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[width=\textwidth]{img/chapter3/perf-comparison.pdf}
+	\end{center}
+	\caption{\textbf{Newton-MR, Damped Newton, and Gradient Norm Minimization
+	can Recover Critical Points of a Deep Linear Autoencoder}}
+	\figurelabel{perf-comparison}
+\end{figure}
+
+\subsubsection{Cutoffs Must be Set Strictly}%
+\sectionlabel{dlae-cutoffs}
+
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[width=0.7\textwidth]{img/chapter3/cutoffs.pdf}
+	\end{center}
+	\caption{\textbf{Cutoffs Above 1e-10 are Insufficient to Guarantee
+	Accurate Loss and Index Recovery}.}
+	\figurelabel{cutoffs}
+\end{figure}
 
 \section{Methods that Work on a Linear Network Fail on a Non-Linear Network}%
 \sectionlabel{nonlinear-failure}
 
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{img/chapter3/nonlinear-failure.pdf}
+	\end{center}
+	\caption{\textbf{Newton-MR Fails to Find Critical Points
+	on a Non-Linear Network}}
+	\figurelabel{nonlinear-failure}
+\end{figure}
 \section{Gradient-Flat Regions can Cause Critical Point-Finding Methods to Fail}%
 \sectionlabel{gfr}
 
+In this section,
+we introduce and define gradient-flat points and
+explain why they are problematic for second-order
+critical point-finding methods,
+with the help of a low-dimensional example
+to build intuition.
+In numerical settings and in high dimensions,
+approximately gradient-flat points are also important,
+and so we define a quantitative index of gradient-flatness
+based on the residual norm of the Newton updatenonlinear-failure.
+Connected sets of these numerically gradient-flat points
+are gradient-flat regions,
+which cause trouble for
+second-order critical point-finding methods.
+
 \subsection{At Gradient-Flat Points, the Gradient Lies in the Hessian's Kernel}%
-\sectionlabel{def-gfp}
+\sectionlabel{theory}
+
+Critical points are of interest because
+they are points where the first-order approximation
+of a function  $f$ at a point
+$x+\delta$ based on the local information at $x$
+\begin{equation}
+    f(x + \delta) \approx f(x) + \grad{f}{x}^\top \delta
+\end{equation}
+is constant, indicating that they are the stationary points
+of first-order optimization algorithms
+like gradient descent and its accelerated variants.
+
+In the construction of our critical point finding methods in
+\chapterref{two},
+we used a linear approximation of the behavior
+of the gradient function
+at a point $x + p$ given the local information at a point $x$
+\begin{equation}
+    \grad{f}{x + p} \approx \grad{f}{x} + \hess{f}{x}p
+\end{equation}
+
+The approximation on the right-hand side is constant whenever
+$p$ is an element of $\ker{\hess{f}{x}}$.
+When $\hess{f}{x}$ is non-singular,
+this is only satisfied when $p$ is $0$,
+and so the whole expression is $0$
+only if $\grad{f}{x}$ is $0$.
+For a singular Hessian,
+the update $p$ is zero iff $\grad{f}{x}$ is
+in the kernel of the pseudoinverse.
+
+In gradient norm minimization,
+we search for critical points
+by applying first-order optimization methods
+to the squared gradient norm function,
+$g(\theta) = \sgn{L}{\theta}$.
+The gradient function of $g$ is
+\begin{equation}
+	\grad{g}{x} = \hess{f}{x}\grad{f}{x}
+\end{equation}
+As with Newton methods, in the invertible case
+the updates are zero iff $\grad{f}{x}$ is 0.
+In the singular case,
+the updates are zero if the gradient is in the Hessian's kernel.
+
+In the case of invertible Hessians, then,
+these methods can guarantee.
+However, neural network Hessians are generally singular,
+especially in the overparameterized case~\cite{sagun2017,ghorbani2019},
+meaning the kernel is non-trivial,
+and so neither class of methods can guarantee
+convergence to critical points
+(for GNM, see~\cite{doye2002};
+for Newton methods, see~\cite{powell1970,griewank1983}).
+
+What are the stationary points, besides critical points,
+for these two method classes in the case of singular Hessians?
+It would seem at first that they are different:
+for gradient norm minimization,
+when the gradient is in the Hessian's kernel;
+for Newton-type methods,
+when the gradient is in the Hessian's pseudoinverse's kernel.
+In fact, however,
+these conditions are identical, due to the Hessian's symmetry\footnote{%
+Indeed, the kernel of the pseudo-inverse is equal
+to the kernel of transpose,
+as can be seen from the singular value decomposition,
+and the Hessian is equal to its transpose because it is symmetric.
+See~\cite{strang1993}.},
+and so both algorithms share a broad class of stationary points.
+
+These stationary points have been identified previously,
+but nomenclature is not standard:
+Doye and Wales, studying gradient norm minimization,
+call them \emph{non-stationary points}~\cite{doye2002},
+since they are non-stationary with respect to the function $f$,
+while Byrd et al., studying Newton methods,
+call them \emph{stationary points}~\cite{byrd2004},
+since they are stationary with respect to the merit function $g$.
+To avoid confusion between these incommensurate conventions
+or with the stationary points of the function $f$,
+we call a point where the gradient lies in the kernel
+of the Hessian a \emph{gradient-flat} point.
+This name was chosen because a function is \emph{flat}
+when its Hessian is 0, meaning every direction is in the kernel,
+and so it is locally flat around a point in a given direction
+whenever that direction is in the kernel of the Hessian at that point.
+Note that, because $0 \in \ker$ for all matrices,
+every critical point is also a gradient-flat point,
+but the reverse is not true.
+When we wish to explicitly refer to gradient-flat points
+which are not critical points,
+we will call them \emph{strict} gradient-flat points.
+At a strict gradient-flat point, the function is,
+along the direction of the gradient,
+locally linear up to second order.
+
+There is an alternative view of gradient-flat points
+based on the squared gradient norm function $g$.
+All gradient-flat points are stationary points
+of the gradient norm,
+which may in principle be local minima, maxima, or saddles,
+while the global minima of the gradient norm are critical points.
+When they are local minima of the gradient norm,
+they can be targets of convergence
+for methods that use
+first-order approximations of the gradient map,
+as in gradient norm minimization and in Newton-type methods.
+Strict gradient-flat points, then,
+can be \enquote{bad local minima} of the gradient norm,
+and therefore prevent the convergence of
+second-order root-finding methods
+to critical points,
+just as bad local minima of the loss function
+can prevent convergence of first-order optimization methods
+to global optima.
+
+Note that Newton methods cannot be demonstrated to converge
+only to gradient-flat points~\cite{powell1970,byrd2004}.
+Furthermore, Newton convergence can be substantially slowed
+when even a small fraction of the gradient
+is in the kernel~\cite{griewank1983}.
+Below we will see that,
+while Newton-MR applied to a neural network loss
+sometimes converges to and almost always encounters strict gradient-flat points,
+the final iterate is not always either
+a strict gradient-flat point or a critical point.
 
 \subsection{Convergence to Gradient-Flat Points Occurs in a Low-Dimensional Quartic Example}%
 \sectionlabel{toy}
 
+The difficulties that gradient-flat points pose for Newton methods
+can be demonstrated with a polynomial example in two dimensions,
+plotted in \figureref{toy}A.
+Below,
+we will characterize
+the strict gradient-flat (\failcolor{})
+and critical (\successcolor{}) points of this function
+(\figureref{toy}A).
+Then, we will observe the behavior of Newton-MR
+when applied to it (\figureref{toy}B-C)
+and note similarities to the results in \figureref{nonlinear-failure}.
+We will use this simple, low-dimensional example
+to demonstrate principles useful
+for understanding the results of applying
+second-order critical point-finding methods to more complex,
+higher-dimensional neural network losses.
+
+As our model function, we choose
+\begin{equation}\equationlabel{toy}
+    f(x, y) = 1/4 x^4 - 3x^2 + 9x + 0.9y^4 + 5y^2 + 40
+\end{equation}
+
+\begin{figure}
+	\includegraphics[width=0.9\linewidth]{img/chapter3/toy_problem.pdf}
+	\caption{\textbf{Stationarity of and Convergence to
+	a Strict Gradient-Flat Point on a Quartic Function}.}%
+	{\textbf{A}:
+	Critical and strict gradient-flat points
+	of quartic $f(x,y)$ (defined in \equationref{toy}).
+	Central panel:
+	$f(x,y)$
+	plotted in black and white
+	(black, low values; white, high values),
+	along with the direction of the Newton update $p$
+	as a (notably non-smooth) vector field (red).
+	Stationary points of
+	the squared gradient norm merit function $g$ are indicated:
+	strict gradient-flat points in \failcolor{},
+	the critical point in \successcolor{}.
+	Top and bottom panels:
+	The value (top) and squared gradient norm (bottom)
+	of $f$ as a function of $x$ value
+	with $y$ fixed at 0.
+	The $x$ axis is shared between panels.
+	\textbf{B}:
+	Performance and trajectories of Newton-MR
+	on~\equationref{toy}.
+	Runs that terminate near a strict gradient-flat point
+	are in \failcolor{},
+	while those that terminate near
+	a critical point are in \successcolor{}.
+	Central panel:
+	Trajectories of Newton-MR laid over
+	$f(x, y)$.
+	$x$ and $y$ axes are shared with the central panel of
+	\emph{A}.
+	Initial values indicated with scatter points.
+	Top and bottom panels:
+	Function values (top) and squared gradient norms (bottom)
+	of Newton-MR trajectories as a function of iteration.
+	The $x$ axis is shared between panels.}\figurelabel{toy}
+\end{figure}
+
+It is plotted in~\figureref{toy}A, central panel.
+This quartic function has two affine subspaces
+of points with non-trivial Hessian kernel,
+defined by $[\pm\sqrt{2}, y]$.
+The kernel points along the $x$ direction and so
+is orthogonal to this affine subspace at every point.
+As a function of $y$, $f$ is convex,
+with one-dimensional minimizers at $y=0$.
+The strict gradient-flat points occur at the intersections
+of these two sets:
+one strict gradient-flat point at $[\sqrt{2}, 0]$,
+which is a local minimum of the gradient norm,
+and one at $[-\sqrt{2}, 0]$,
+which is a saddle of the same
+(\figureref{toy}A, \failcolor{} points, all panels).
+In the vicinity of these points, the gradient is,
+to first order, constant along the $x$-axis,
+and so the function is locally linear or flat.
+These points are gradient-flat but
+neither is a critical point of $f$.
+The only critical point is located at the minimum of the polynomial,
+at $[-3, 0]$
+(\figureref{toy}A, \successcolor{} point, all panels),
+which is also a global minimum of the gradient norm.
+The affine subspace that passes through
+$[-\sqrt{2}, 0]$ divides the space into two
+basins of attraction, loosely defined,
+for second-order methods:
+one, with initial $x$-coordinate $x_0<-\sqrt{2}$,
+for the critical point of $f$
+and the other for the strict gradient-flat point.
+Note that the vector field in the central panel shows update directions
+for the pure Newton method,
+which can behave extremely poorly in the vicinity
+of singularities~\cite{powell1970,griewank1983},
+often oscillating and converging very slowly
+or diverging.
+
+Practical Newton methods,
+like those introduced in \chapterref{two}
+and used in \sectionref{dlae-results} above,
+use techniques like
+damping and line search to improve behavior.
+To demonstrate how a practical Newton method
+behaves on this function,
+we focus on the case of Newton-MR\@.
+Results are qualitatively similar for damped Newton.
+
+The results of applying Newton-MR
+to~\equationref{toy} are shown in%
+~\figureref{toy}B.
+The gradient-flat point is attracting
+for some trajectories
+(\failcolor{}),
+while the critical point is attracting for others
+(\successcolor{}).
+For trajectories that approach the strict gradient-flat point,
+the gradient norm does not converge to 0,
+but converges to a non-zero value near 10
+(\failcolor{} trajectories; \figureref{toy}B, bottom panel).
+This value is typically several orders of magnitude lower
+than the initial point, and so would appear to be close to 0
+on a linear scale that includes the gradient norm of the initial point.
+Since log-scaling of loss functions is uncommon in machine learning,
+as losses do not always have minima at 0,
+second-order methods apporaching gradient-flat points
+can appear to converge to critical points
+if typical methods for visually assessing convergence are used.
+
+There are two interesting and atypical behaviors worth noting.
+First, the trajectories tend to oscillate
+in the vicinity of the gradient-flat point
+and converge more slowly
+(\figureref{toy}B, central panel, \failcolor{} lines).
+Updates from points close to the affine subspace where the Hessian has a kernel,
+and so which have an approximate kernel themselves,
+sometimes jump to points where the Hessian doesn't have an approximate kernel.
+This suggests that, when converging towards a gradient-flat point,
+the degree of flatness will change iteration by iteration.
+Second, some trajectories begin in the nominal basin
+of attraction of the gradient-flat point
+but converge to the critical point
+(\figureref{toy}B, central panel, \successcolor{} points
+with $x$-coordinate $>-\sqrt{2}$).
+This is because the combination of back-tracking line search
+and large proposed step sizes means that occasionally,
+very large steps can be taken, based on non-local features of the function.
+Indeed,
+back-tracking line search is a limited form of global optimization
+and the ability of line searches
+to change convergence behaviors predicted from local properties
+on nonconvex problems
+is known~\cite{nocedal2006}.
+Since the back-tracking line search is based on the gradient norm,
+the basin of attraction for the true critical point,
+which has a lower gradient norm than the gradient-flat point,
+is much enlarged relative to that for the gradient-flat point.
+This suggests that Newton methods
+using the gradient norm merit function will be biased
+towards finding gradient-flat points
+that also have low gradient norm.
+
 \subsection{Approximate Gradient-Flat Points Form Gradient-Flat Regions}%
-\sectionlabel{def-gfr}
+\sectionlabel{approxgfp}
+Analytical arguments focus on exactly gradient-flat points,
+where the Hessian has an exact kernel
+and the gradient is entirely within it.
+In numerical settings,
+it is almost certain no matrix will have an exact kernel,
+due to rounding error.
+For the same reason, the computed gradient vector will generically not lie entirely
+within the exact or approximate kernel.
+However, numerical implementations of second-order methods
+will struggle even when there is no exact kernel
+or when the gradient is only partly in it,
+and so a numerical index of flatness is required.
+This is analogous to the requirement to specify a tolerance
+for the norm of the gradient when deciding whether to consider a point
+an approximate critical point or not.
+
+We quantify the degree of gradient-flatness of a point
+by means of
+the \emph{relative residual norm} ($r$)
+and the \emph{relative co-kernel residual norm} ($r_H$)
+for the Newton update direction $p$.
+The vector $p$ is an inexact solution to the Newton system $Hp + g = 0$,
+where $H$ and $g$ are the current iterate's Hessian and gradient.
+The residual is equal to $Hp + g$,
+and the smaller its norm, the better $p$ is as a solution.
+The co-kernel residual is equal to the Hessian times the residual,
+and so ignores any component in the kernel of the Hessian.
+Its norm quantifies the quality of an inexact Newton solution
+in the case that the gradient lies partly in the Hessian kernel,
+the unsatisfiable case, where $Hp \neq -g$ for any $p$.
+When the residual is large but the co-kernel residual is small
+(norms near 1 and 0, respectively, following suitable normalization),
+then we are at a point where
+the gradient is almost entirely in the kernel of the Hessian:
+an approximate gradient-flat point.
+In the results below, we consider a point approximately gradient-flat
+when the value of $r_H$ is below 5e-4
+while the value of $r$ is above $0.9$.
+We emphasize that numerical issues for second-order methods
+can arise even when the degree of gradient-flatness
+is small.
+
+The relative residual norm, $r$,
+measures the size of the error
+of an approximate solution to the Newton system.
+Introducing the symbols $H$ and $g$,
+for the Hessian and gradient at a query point,
+the Newton system may be written
+$0 = Hp + g$
+and $r$ is then
+\begin{equation}
+    r(p) = \frac{\norm{Hp + g}}{\norm{H}_F \norm{p} + \norm{g}}
+\end{equation}
+where $\norm{M}_F$ of a matrix $M$ is its Frobenius norm.
+Since all quantities are non-negative,
+$r$ is non-negative;
+because the denominator bounds the numerator,
+by the triangle inequality and the compatibility
+of the Frobenius and Euclidean norms,
+$r$ is at most 1.
+For an exact solution of the Newton system $p^\star$,
+$r(p^\star)$ is 0, the minimum value,
+while $r(0)$ is 1, the maximum value.
+Note that small values of $\norm{p}$
+do not imply large values of this quantity,
+since $\norm{p}$ goes to 0 when a Newton method
+converges towards a critical point,
+while $r$ goes to 0.
+
+When $g$ is partially in the kernel of $H$,
+the Newton system is unsatisfiable,
+as $g$ will also be partly in the co-image of $H$,
+the linear subspace into which $H$ cannot map any vector.
+In this case, the minimal value for $r$ will no longer be $0$.
+The optimal solution for $\norm{Hp + g}$
+instead has the property that its residual
+is $0$ once restricted to the co-kernel of $H$.
+This co-kernel residual can be measured by applying the matrix $H$
+to the residual vector $Hp + g$.
+After normalization, it becomes
+\begin{equation}
+    r_H(p) = \frac{\norm{H(Hp + g)}}{\norm{H}_F \norm{Hp + g}}
+\end{equation}
+Note that this value is also small when the gradient lies
+primarily along the eigenvalues of smallest magnitude
+On each internal iteration, MR-QLP checks whether
+either of these values is below a tolerance level
+(in our experiments, 5e-4)
+and if either is, it ceases iteration.
+With exact arithmetic,
+either one or the other of these values
+should go to 0 within a finite number of iterations;
+with inexact arithmetic, they should just become small.
+See~\cite{choi2011} for details.
+
+Under this relaxed definition of gradient-flatness,
+there will be a neighborhood of approximate gradient-flat points
+around a strict, exact gradient-flat point
+for functions with Lipschitz-smooth gradients and Hessians.
+Furthermore, there might be connected sets of non-null Lebesgue measure
+which all satisfy the approximate gradient-flatness condition
+but none of which satisfy the exact gradient-flatness condition.
+We call both of these \emph{gradient-flat regions}.
+
+There are multiple reasonable numerical indices of flatness besides
+the definition above.
+For example,
+the Hessian-gradient regularity condition in~\cite{roosta2018},
+which is used to prove convergence of Newton-MR,
+would suggest creating a basis for the approximate kernel of the Hessian
+and projecting the gradient onto it.
+Alternatively, one could compute the Rayleigh quotient
+of the gradient with respect to the Hessian.
+Our method has the advantage of being computed as part of the Newton-MR algorithm.
+It furthermore avoids diagonalizing the Hessian or the specification
+of an arbitrary eigenvalue cutoff.
+The Rayleigh quotient can be computed with only one Hessian-vector product,
+plus several vector-vector products,
+so it might be a superior choice for larger problems where
+computing a high-quality inexact Newton step is computationally infeasible.
 
 \section{Gradient-Flat Regions Abound on Several Neural Network Losses}%
 \sectionlabel{gfr-results}
