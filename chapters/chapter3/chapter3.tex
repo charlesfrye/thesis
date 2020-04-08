@@ -22,7 +22,7 @@ a number of second-order algorithms
 for finding the critical points of neural network loss functions.
 As described in \chapterref{one},
 information about the local curvature at these points is useful
-for understanding the optimizability of these neural networks.
+for understanding the optimizability of neural networks.
 For example, the No-Bad-Local-Minima theory
 (NBLM\@; see \sectionref{nblm}),
 based on a random function model of neural network losses
@@ -69,9 +69,10 @@ points where the gradient lies in the kernel of the Hessian.
 We call these \emph{gradient-flat points}.
 They are defined in~\sectionref{gfr}.
 We present evidence that these points are encountered
-by critical point-finding methods in~\sectionref{gfr-results}.
+by critical point-finding methods applied to neural network losses in%
+~\sectionref{gfr-results}.
 
-These gradient-flat points can be
+The gradient-flat points that cause the most trouble are
 bad local minima of the gradient norm.
 The core result of this chapter
 and this dissertation, then,
@@ -84,8 +85,395 @@ suffer from a bad-local-minima problem of their own.
 \section{The Deep Linear Autoencoder Provides a Useful Test Problem}%
 \sectionlabel{dlae}
 
-\subsection{The Critical Points of the Deep Linear Autoencoder are Known}%
-\sectionlabel{dlae-cps}
+This section introduces the deep linear autoencoder
+as a test problem for critical point-finding methods
+for neural network loss functions.
+First,
+the need for test problems is explained
+(\sectionref{test}).
+Then,
+the deep linear autoencoder is presented
+and the critical points derived
+\sectrionref{def-dlae}.
+Finally, the performance of
+Newton-MR (\algoref{nmr}),
+damped Newton (\algoref{damped-newton}),
+and gradient norm minimization\footnote{%
+In \sectionref{gnm},
+the term \enquote{gradient norm minimization}
+was used to refer to a class of methods,
+corresponding to different choices of first-order optimizer
+applied to the problem of minimizing
+the squared gradient norm objective function,
+\equationref{def-g}\@.
+Here, we use it to refer to
+the choice of gradient norm minimization
+by gradient descent plus back-tracking line search.
+\textbf{TODO\@: resolve BTLS-GNM nomenclature}.}
+(\algoref{gnm})
+are compared.
+
+
+\subsection{Test Problems are Necessary}%
+\sectionlabel{test}
+
+In the case of optimization for the solution of engineering problems,
+the question of convergence to the neighborhood of a true minimizer
+is often an academic one.
+The goal of the optimization procedure is to find a point
+at which the loss is sufficiently low to
+e.g.~allow the airplane to fly
+or select the better ad to display to users.
+The problem of finding critical points is different:
+our goal is to check analytical properties,
+which can in principle require arbitrary precision.
+
+The usual solution is to prove an upper bound on the precision required
+by means of inequalities.
+In our case, we are interested in two quantities:
+the loss $L$ and
+the index $I$ (\defref{index})
+at critical points $\theta_{\cp}$.
+For the loss,
+we might proceed by demonstrating that the function is
+$K$-Lipschitz for some constant $K$.
+
+\begin{definition}{Lipschitz}{lipschitz}
+	A function $f\from \R^n \to \R$ is said to be \emph{$K$-Lipschitz} if
+	\begin{equation}
+		\norm{f(x + \eps) - f(x)} \leq K\norm{\eps}
+	\end{equation}
+	for some $K\in \R_{\geq 0}$ and for all $x,\eps \in \R^n$.
+\end{definition}
+\noindent For an almost everywhere differentiable function,
+like $\ReLU$, $K$-Lipschitz continuity is equivalent to demonstrating
+that the gradient norm is bounded by $K$.
+Using this fact,
+a bound on the difference between the loss
+at an approximate critical point with gradient norm $\eps$
+and any nearby true critical points can be derived.
+
+However, the Lipschitz constants of typical neural network
+losses are not well-controlled
+\cite{gouk2018}, %chktex 2
+resulting in worst-case bounds that are overly-pessimistic.
+The situation is even worse for calculating the index,
+which depends both on Lipschitz bounds on the operator norm
+of the Hessian and on guarantees that the kernel changes only slowly.
+
+In the absence of these guarantees,
+the results of numerical algorithms must be interpreted with care
+and hyperparameters must be tuned cautiously.
+The behavior of algorithms during convergence should be closely monitored
+and reported along with results.
+And critically, it is important to test numerical algorithms
+on problems for which the answers are known
+before applying them to problems for which the answers are in doubt.
+In addition to allowing for hyperparameters to be set to reasonable starting values
+and for the signatures of convergence to be identified,
+test problems provide an important opportunity to debug implementations
+that is missing in cases without ground truth.
+Analytical guarantees are of little value
+if the algorithms in question are broken.
+
+Furthermore, there are many critical point-finding algorithms that might be chosen.
+\chapterref{two} presented two Newton methods
+of sufficient robustness for practical use,
+plus gradient norm minimization.
+Both the damped Newton method~\cite{dauphin2014}
+and gradient norm minimization~\cite{pennington2017}
+have been used,
+but sufficient information for comparing performance
+was not published.
+
+It is critical that the test problem be designed
+to be as close as possible to the problem of interest.
+The following section introduces such a test problem for
+neural network loss functions.
+
+\subsection{The Deep Linear Autoencoder has Known Critical Points}%
+\sectionlabel{def-dlae}
+
+The key difficulty for deriving analytical expressions
+for the critical points of non-linear neural networks
+is that the gradients of the loss are non-linear
+in an arbitrary fashion.
+This turns the problem of finding critical points
+into the problem of finding solutions to generic non-linear equations.
+
+Neural networks without non-linearities,
+also known as \emph{linear networks},
+avoid this problem.
+The network is constructed by raveling the entries of $\theta$
+into a $D$-element sequence of matrices $W_i(\theta)$
+which multiply an input $x$ in turn.
+We call these matrices the \emph{weight matrices}
+of the network and say that the network has $D$ layers.
+\begin{align}
+	\mathrm{NN}_{\mathrm{DLN}}(\theta)(x)
+	&= W_D(\theta) W_{D-1}(\theta) \dots W_{2}(\theta) W_{1}(\theta) x\\
+	&\defeq{W(\theta) x}
+\end{align}
+\noindent As the second line indicates,
+this is equivalent to applying
+a single matrix $W(\theta)$.
+Therefore the function computed by the network as a whole is linear.
+Any non-linearity in the gradient function
+of the loss of such a network is introduced
+only by the cost function and regularizer.
+For simplicity, we consider only the unregularized case.
+
+The loss of this network can be construed as a function
+of any of three quantities.
+As before, it is a function of the vector of parameters $\theta$,
+which we continute to denote $L$.
+It is also a function of the separate weights of each layer,
+the matrices $W_i$,
+which we denote $l$
+and refer to as the \emph{layerwise} loss.
+These functions also exist for non-linear networks.
+Finally, in the linear case
+the loss can also be written a function
+of the \enquote{collapsed} matrix $W$,
+which we denote $\cL$
+and refer to as the \emph{collapsed} loss.
+We further drop the explicit dependence of $W$
+and the $W_i$ on $\theta$ when writing the loss in this way.
+
+With this setup,
+we can write the gradients of a linear network
+of arbitrary depth
+with arbitrary cost in simple form.
+\begin{theorem}{Gradients of a Deep Linear Network}{dln-grad}
+	\emph{%
+	Let $l$ be the layerwise loss
+	and $\cL$ the collapsed loss
+	of a deep linear network
+	with $D$ layers.
+	The gradient function of the layerwise loss
+	with respect to layer $k$,
+	denoted $\nabla_{W_k}(l)$, is
+	\begin{equation}
+		\grad{_{W_k} l}{W_1, \dots, W_D}
+		= W_{k+1:}^\top \grad{\cL}{W} W_{:k}^\top\equationlabel{def-dln-grad}
+	\end{equation}
+	}
+\end{theorem}
+\noindent where the notation $W_{i:j}$,
+inspired by the slicing syntax of Python and other languages,
+stands for the products of matrices $i$ to $j-1$,
+with an empty entry on the left standing for $1$
+and an empty entry on the right standing for $D+1$.
+
+\noindent \emph{Proof of \thmref{dln-grad}}:\\
+This proof follows closely that in%
+~\cite{laurent2018}.
+The gradient is defined in terms of the value
+of the function at an input perturbed by $\eps$
+\begin{equation}
+	l(W_1, \dots, W_{k-1}, W_k + \eps, W_{k+1}, \dots W_D)
+\end{equation}
+\noindent where here $\eps$ is a matrix of the same shape as $W_k$.
+We proceed by converting to the collasped loss $\cL$
+and multiplying through the matrix product.
+\begin{align}
+	l(W_1, \dots, W_{k-1}, W_k + \eps, W_{k+1}, \dots W_D)
+	&= \cL\left(W_1 W_2 \dots W_{k-1} (W_k + \eps) W_{k+1} \dots W_D\right)\\
+	&= \cL\left(W + W_{k+1:} \eps W_{:k}\right)\\
+	&= \grad{\cL}{W} + \langle \grad{\cL}{W}, W_{k+1:} \eps W_{:k}\rangle + o(\eps)
+	\equationlabel{taylor-collapsed-loss}
+\end{align}
+\noindent where the last line follows by pattern-matching
+to the definition of the gradient function,
+\defref{gradient}.
+Note that the inner product here is an inner product of matrices.
+It is the Frobenius inner product
+\begin{equation}
+	\langle A, B \rangle = \tr\left(A^\top B\right)
+\end{equation}
+\noindent which is defined by unraveling the matrices
+and applying the Euclidean inner product,
+i.e.~as a pullback of that inner product via the raveling isomorphism.
+The trace $\tr$ is invariant to cyclic permutations,
+and so we can re-organize the middle term of
+\eqnref{taylor-collapsed-loss}
+to better match the definition of the gradient function.
+\begin{align}
+	\langle \grad{\cL}{W}, W_{k+1:} \eps W_{:k}\rangle
+	&= \tr\left(\grad{\cL}{W}^\top W_{k+1:} \eps W_{:k} \right)\\
+	&= \tr\left(W_{:k} \grad{\cL}{W}^\top W_{k+1:} \eps \right)\\
+	&= \langle W_{k+1:}^\top \grad{\cL}{W}W_{:k}^\top, \eps\rangle
+\end{align}
+\noindent which implies, by pattern-matching
+to the definition of the gradient function again,
+\begin{equation}
+	\grad{_{W_k} l}{W_1, \dots, W_D}
+	= W_{k+1:}^\top \grad{\cL}{W} W_{:k}^\top
+\end{equation}
+\QED\\
+
+This suggests that if we wish to be able to
+come up with an analytic expression for the critical points,
+which make this gradient function $0$,
+we choose a collapsed loss function $\cL$
+that has a simple form that allows us to set
+\equationref{def-dln-grad} equal to $0$ and solve.
+
+We therefore make several simplifying choices
+in constructing our test problem.
+First, we take the inputs and targets
+to be the same.
+This type of network is known as an \emph{autoencoder}.
+Second, we choose the squared error as the loss function.
+Finally, we choose the number of layers $D$ to be $2$.
+We refer to this combination as the \emph{deep linear autoencoder}.
+
+The critical points of this network can be characterized as follows:
+\begin{theorem}{Critical Points of Deep Linear Autoencoder}{dlae-cps}
+	\emph{%
+	Let $L$ be the loss function of a linear network such that
+	\begin{equation}
+		L(\theta) = \snorm{X - W_2(\theta)W_1(\theta) X}
+	\end{equation}
+	\noindent for some matrix $X\in\R^{k\times n}$
+	such that $XX^\top$ is full rank,
+	with $W_1\from \R^{2kp}\to \R^{p\times k}$
+	$W_2\from \R^{2kp}\to \R^{k \times p}$.
+	\\ \ \\
+	Then the critical points of this network
+	correspond to those $\theta_{\cp}$
+	such that the matrix
+	$W = W_2(\theta_\cp)W_1(\theta_\cp)$
+	acts as the identity on a subspace
+	spanned by some subset of the eigenvectors of $XX^\top$
+	and the zero matrix otherwise.
+	}
+\end{theorem}
+
+Before diving into the proof,
+we first consider the interpretation and implications.
+The matrix $XX^\top$ is the
+sample covariance matrix of the data $X$.
+The eigenvectors of this matrix are known as the
+\emph{principal components}
+of the data.
+A single critical point can be constructed
+according to the criterion in the theorem above
+by choosing $m \leq p$ principal components
+for the rows of $W_1$
+(setting the others to $0$ when $m<p$)
+and choosing $W_2 = W_1^\top$.
+Ignoring permutations,
+this allows the construction of
+a number of critical points equal to the number of ways
+to choose from $0$ to $p$ elements
+from a $k$ element set:
+$\sum_{i=0}^p \binom{k}{i}$.
+When the eigenvectors selected are the $m$
+with largest eigenvalue,
+this network is performing \emph{principal components analysis}.
+This value corresponds to the global minimum.
+It can be demonstrated that there are no non-global local minima%
+~\cite{baldi1989,laurent2018},
+and so this loss function has the no-bad-local-minima property.
+
+An uncountable quantity of additional critical points
+can be constructed from the points corresponding directly
+to the principal components.
+Indeed, the key property in~\thmref{dlae-cps}
+is defined in terms of the collapsed matrix $W$.
+Applying any invertible $p\times p$ matrix $C$ after $W_1$
+and its inverse $C^{-1}$ before $W_2$
+leaves $W$ unchanged\footnote{%
+Note that invertible matrices form a Lie group,
+and therefore so do these critical points.
+This situation is shared, to an extent,
+in $\ReLU$ networks~\cite{freeman2016}},
+and so the resulting new point is also a critical point.
+The loss and index are unchanged,
+and so we can consider these collections
+to be equivalence classes of critical points,
+with representatives given by the choice $C=C^{-1}=I$.
+
+\thmref{dlae-cps},
+which was first proven in%
+~\cite{baldi1989},
+is proven in the following section
+for completeness.
+Readers uninterested in the technical details
+are invited to skip to
+\sectionref{dlae-results}.
+
+\subsubsection{Proof of \thmref{dlae-cps}}%
+\sectionlabel{dlae-proof}
+
+The collapsed loss function of the linear network is
+\begin{equation}
+	\cL(W) = \snorm{X - WX}
+\end{equation}
+
+Expanding the right-hand side,
+we have that
+\begin{align}
+	\cL(W + \eps)
+	&= \tr\left(X^\top X\right) - \tr\left(2X^\top(W+\eps)X\right)
+	+ \tr\left(X^\top{(W+\eps)}^\top(W+\eps)X\right)\\
+	&= \cL(W) + \tr\left(2 XX^\top W \eps - 2XX^\top\eps\right) + o(\eps)
+\end{align}
+\noindent which, after re-arrangement, gives the gradient function
+for $\cL$ by pattern-matching to \defref{gradient}:
+\begin{equation}
+	\grad{\cL}{W} = 2 XX^\top (W - I)
+\end{equation}
+
+To find the analytical critical points,
+we plug this definition into
+the expressions for the gradients with respect to
+the two weight matrices $W_1$ and $W_2$
+given by \thmref{dln-grad}
+and solve for 0.
+
+We start with $W_2$:
+\begin{align}
+	\grad{l_{W_2}}{W_1, W_2} &= \grad{\cL}{W} W_1^\top\\
+	0 &= \grad{\cL}{W} W_1^\top\\
+	0 &= 2 XX^\top\left(W_2 W_1 - I\right) W_1^\top\\
+	W_1^\top &= W_2W_1 W_1^\top
+\end{align}
+\noindent where the transition to the third line
+used the invertibility of $XX^\top$.
+This equation is satisfied
+whenever $W_2 W_1$ is equivalent to the identity
+matrix when restricted to the co-kernel of $W_1$,
+which is the range of $W_1^\top$.
+
+This isn't sufficient to completely determine
+$W_1$ and $W_2$,
+so we proceed to the equations
+for $W_1$:
+\begin{align}
+	0 &= W_2^\top\grad{\cL}{W}\\
+	0 &= W_2^\top 2 XX^\top\left(W_2 W_1 - I\right)\\
+	W_2^\top &= W_2^\top XX^\top W_2 W_1 {\left(X X^\top\right)}^{-1}
+\end{align}
+\noindent When the matrix $XX^\top$
+is simultaneously diagonalizable with the matrix $W_2W_1$,
+the matrices commute,
+which gives the equation
+\begin{align}
+	W_2^\top &= W_2^\top W_2 W_1
+\end{align}
+\noindent
+This equation holds when $W_2 W_1$ is equivalent to the identity
+when applied to the co-kernel of $W_2^\top$.
+
+For $W_2 W_1$ to be simultaneously diagonalizable with $XX^\top$,
+the non-zero eigenvectors of $W_2W_1$
+need to be the same as some subset of the eigenvectors of $XX^\top$.
+Together, these conditions imply that
+at a critical point of the loss,
+$W_2W_1$ acts as the identity
+on a subspace spanned by some subset of the eigenvectors of $XX^\top$.
 
 \subsection{Newton-MR Outperforms Previously-Used Methods}%
 \sectionlabel{dlae-results}
