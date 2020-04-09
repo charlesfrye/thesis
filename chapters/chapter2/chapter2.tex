@@ -70,8 +70,8 @@ taking the square root will require us to define
 approximate square roots,
 set up a surrogate optimization problem based
 on an inequality that relaxes an equality,
-and develop an inexact, iterative method for scalar inversion%
-\sectionref{div}.
+and develop an inexact, iterative method for scalar inversion
+(\sectionref{div}).
 
 This running example is used to intuitively motivate
 each of three algorithm classes in turn:
@@ -463,10 +463,10 @@ in addition to a gradient function, $\nabla f$,
 it also needs a Hessian function, $\nabla^2 f$.
 
 In the absence of geometric intuition
-to explain why this is as sensible algorithm,
+to explain why this is a sensible algorithm,
 we turn to calculus.
 First, we show that this is the best method possible for functions
-with constant Hessian.
+with constant Hessian function.
 
 \begin{theorem}{Optimality of Newton Step}{newton}
 	\emph{Let $f$ be a twice-differentiable function
@@ -1137,7 +1137,7 @@ defined below.
 
 	An optimization method is a
 	\emph{Krylov subspace method}
-	if its iterate at step $r$, $\p_r$,
+	if its iterate at step $r$, $p_r$,
 	is an element of the Krylov subspace of order $r$.
 \end{definition}
 \noindent Note that the Krylov subspaces
