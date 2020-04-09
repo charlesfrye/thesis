@@ -9,7 +9,6 @@ Reveals Gradient-Flat Regions}\chapterlabel{three}
 \onlyinsubfile{\begin{KeepFromToc}
 		\tableofcontents
 		\listoffigures
-		\listofalgorithms{}
 	\end{KeepFromToc}}
 \onlyinsubfile{\clearpage}
 \onlyinsubfile{\linenumbers}
@@ -94,23 +93,13 @@ the need for test problems is explained
 Then,
 the deep linear autoencoder is presented
 and the critical points derived
-\sectrionref{def-dlae}.
+\sectionref{def-dlae}.
 Finally, the performance of
 Newton-MR (\algoref{nmr}),
 damped Newton (\algoref{damped-newton}),
-and gradient norm minimization\footnote{%
-In \sectionref{gnm},
-the term \enquote{gradient norm minimization}
-was used to refer to a class of methods,
-corresponding to different choices of first-order optimizer
-applied to the problem of minimizing
-the squared gradient norm objective function,
-\equationref{def-g}\@.
-Here, we use it to refer to
-the choice of gradient norm minimization
-by gradient descent plus back-tracking line search.
-\textbf{TODO\@: resolve BTLS-GNM nomenclature}.}
-(\algoref{gnm})
+and gradient norm minimization by
+gradient descent with back-tracking line search
+(BTLS-GNM)
 are compared.
 
 Additional results regarding these critical point-finding methods
@@ -141,7 +130,7 @@ For the loss,
 we might proceed by demonstrating that the function is
 $K$-Lipschitz for some constant $K$.
 
-\begin{definition}{Lipschitz}{lipschitz}
+\begin{definition}{Lipschitz Continuity}{lipschitz}
 	A function $f\from \R^n \to \R$ is said to be \emph{$K$-Lipschitz} if
 	\begin{equation}
 		\norm{f(x + \eps) - f(x)} \leq K\norm{\eps}
@@ -211,7 +200,10 @@ The network is constructed by raveling the entries of $\theta$
 into a $D$-element sequence of matrices $W_i(\theta)$
 which multiply an input $x$ in turn.
 We call these matrices the \emph{weight matrices}
-of the network and say that the network has $D$ layers.
+of the network and say that the network has $D$ layers,
+each with \emph{layer size} equal to the number of rows
+in the matrix $W_i$.
+The layers $W_1$ through $W_{D-1}$ are called \emph{hidden layers}.
 \begin{align}
 	\mathrm{NN}_{\mathrm{DLN}}(\theta)(x)
 	&= W_D(\theta) W_{D-1}(\theta) \dots W_{2}(\theta) W_{1}(\theta) x\\
@@ -294,13 +286,12 @@ It is the Frobenius inner product
 \begin{equation}
 	\langle A, B \rangle = \tr\left(A^\top B\right)
 \end{equation}
-\noindent which is defined by unraveling the matrices
-and applying the Euclidean inner product,
-i.e.~as a pullback of that inner product via the raveling isomorphism.
+\noindent which is defined by unraveling the matrices into vectors
+and applying the Euclidean inner product of vectors,
+i.e.~as a pullback of that inner product via a raveling isomorphism.
 The trace $\tr$ is invariant to cyclic permutations,
 and so we can re-organize the middle term of
 \equationref{taylor-collapsed-loss}
-to better match the definition of the gradient function.
 \begin{align}
 	\langle \grad{\cL}{W}, W_{k+1:} \eps W_{:k}\rangle
 	&= \tr\left(\grad{\cL}{W}^\top W_{k+1:} \eps W_{:k} \right)\\
@@ -363,13 +354,12 @@ The eigenvectors of this matrix are known as the
 of the data.
 A single critical point can be constructed
 according to the criterion in the theorem above
-by choosing $m \leq p$ principal components
+by choosing $m \leq p$ separate principal components
 for the rows of $W_1$
 (setting the others to $0$ when $m<p$)
 and choosing $W_2 = W_1^\top$.
-Ignoring permutations,
-this allows the construction of
-a number of critical points equal to the number of ways
+This allows the construction of
+a number of distinct critical points equal to the number of ways
 to choose from $0$ to $p$ elements
 from a $k$ element set:
 $\sum_{i=0}^p \binom{k}{i}$.
@@ -380,8 +370,9 @@ This value corresponds to the global minimum.
 It can be demonstrated that there are no non-global local minima%
 ~\cite{baldi1989,laurent2018},
 and so this loss function has the no-bad-local-minima property.
+It is a generalization of~\exampleref{1ddlae}.
 
-An uncountable quantity of additional critical points
+An uncountable collection of additional critical points
 can be constructed from the points corresponding directly
 to the principal components.
 Indeed, the key property in~\thmref{dlae-cps}
@@ -392,7 +383,7 @@ leaves $W$ unchanged\footnote{%
 Note that invertible matrices form a Lie group,
 and therefore so do these critical points.
 This situation is shared, to an extent,
-in $\ReLU$ networks~\cite{freeman2016}},
+in $\ReLU$ networks~\cite{freeman2016}.},
 and so the resulting new point is also a critical point.
 The loss and index are unchanged,
 and so we can consider these collections
@@ -415,8 +406,7 @@ The collapsed loss function of the linear network is
 \begin{equation}
 	\cL(W) = \snorm{X - WX}
 \end{equation}
-
-Expanding the right-hand side,
+\noindent Expanding the right-hand side,
 we have that
 \begin{align}
 	\cL(W + \eps)
@@ -502,10 +492,10 @@ for the columns of $X$,
 as this distribution is entirely specified by its mean and covariance.
 The connection to PCA
 required that $XX^\top$ be the sample covariance matrix of $X$,
-and so we enforce that $X$ has row mean exactly $0$.
+and so we enforce that $X$ has row means exactly $0$.
 Note that this must be done after sampling,
-as setting the distributional mean to $0$ does not
-result in a row mean sufficiently close to $0$.
+as setting the distributional means to $0$ does not
+result in sample row means of $0$.
 We choose a diagonal covariance matrix.
 To obtain maximally-spaced eigenvalues while still
 controlling the condition number of $XX^\top$,
@@ -591,8 +581,17 @@ Furthermore, decreasing gradient norms during training mean that
 later parameter values are closer together,
 and so this scheme would heavily over-sample a small region.
 Both factors should reduce the variety in recovered critical points%
-\footnote{These approaches are directly compared in~\cite{frye2019}
-and this intuition is borne out.}.
+\footnote{These approaches were directly compared in
+experiments not presented here and this intuition is borne out.
+See~\cite{frye2019}.}.
+To half of the initial points attained in this manner,
+we add Gaussian noise of with variance 1e-2%
+(an SNR of approximately 2.8 dB).
+In separate experiments,
+noise of this magnitude
+this was found to increase
+the diversity in critical points recovered%
+~\cite{frye2019}.
 
 \subsubsection{Critical Point-Finding Methods Have Differential Performance}%
 \sectionlabel{dlae-perf-comparison}
@@ -629,19 +628,23 @@ and this intuition is borne out.}.
 	on a Non-Linear Network}}
 	\figurelabel{nonlinear-failure}
 \end{figure}
+
 \section{Gradient-Flat Regions can Cause Critical Point-Finding Methods to Fail}%
 \sectionlabel{gfr}
 
 In this section,
 we introduce and define gradient-flat points and
 explain why they are problematic for second-order
-critical point-finding methods,
+critical point-finding methods
+\sectionref{theory},
 with the help of a low-dimensional example
-to build intuition.
+to build intuition
+\sectionref{toy}.
 In numerical settings and in high dimensions,
 approximately gradient-flat points are also important,
 and so we define a quantitative index of gradient-flatness
-based on the residual norm of the Newton updatenonlinear-failure.
+based on the residual norm of the Newton update
+\sectionref{approxgfp}.
 Connected sets of these numerically gradient-flat points
 are gradient-flat regions,
 which cause trouble for
@@ -659,9 +662,11 @@ $x+\delta$ based on the local information at $x$
 \end{equation}
 is constant, indicating that they are the stationary points
 of first-order optimization algorithms
-like gradient descent and its accelerated variants.
+like gradient descent and its variants.
 
-In our construction of the critical point-finding methods in
+We can similarly understand the behavior of our second-order
+critical point-finding methods by considering their stationary points.
+In our construction of these methods in
 \chapterref{two},
 we used a linear approximation of the behavior
 of the gradient function
@@ -670,7 +675,7 @@ at a point $x + p$ given the local information at a point $x$
     \grad{f}{x + p} \approx \grad{f}{x} + \hess{f}{x}p
 \end{equation}
 
-Solving this equation for the value of $p$
+Solving for the value of $p$
 that makes the left-hand side $0$
 gave us the Newton update
 \begin{equation}
@@ -687,7 +692,7 @@ In gradient norm minimization,
 we search for critical points
 by applying first-order optimization methods
 to the squared gradient norm function,
-$g(\theta) = \sgn{L}{\theta}$,
+$g(\theta) = \sgn{L}{\theta}$.
 These methods also make a linear approximation
 of the gradient function of $L$.
 The gradient function of $g$ is
@@ -702,9 +707,9 @@ the updates are zero if the gradient is in the Hessian's kernel.
 In the case of invertible Hessians, then,
 these methods can guarantee convergence to critical points.
 However, neural network Hessians are generally singular,
-especially in the overparameterized case~\cite{sagun2017,ghorbani2019},
-meaning the kernel is non-trivial,
-and so neither class of methods can guarantee
+especially in the overparameterized case~\cite{sagun2017,ghorbani2019}.
+In this case,
+neither class of methods can guarantee
 convergence to critical points
 (for GNM, see~\cite{doye2002};
 for Newton methods, see~\cite{powell1970,griewank1983}).
@@ -717,13 +722,67 @@ when the gradient is in the Hessian's kernel;
 for Newton-type methods,
 when the gradient is in the Hessian's pseudoinverse's kernel.
 In fact, however,
-these conditions are identical, due to the Hessian's symmetry\footnote{%
-Indeed, the kernel of the pseudo-inverse is equal
-to the kernel of transpose,
-as can be seen from the singular value decomposition,
-and the Hessian is equal to its transpose because it is symmetric.
-See~\cite{strang1993}.},
+these conditions are identical, due to the Hessian's symmetry,
 and so both algorithms share a broad class of stationary points.
+A proof, based on the construction of the pseudo-inverse in
+\sectionref{pinv-svd}, follows.
+
+\begin{theorem}{Kernel Equals Pseudo-Inverse Kernel for Symmetric $M$}%
+{kernel-pinvkernel}
+	\emph{%
+		Let $M\in\R^{n \times n}$ be a symmetric matrix.
+		Then
+		\begin{equation}
+			\ker M  = \ker\pinv{M}
+		\end{equation}
+	}
+\end{theorem}
+
+\noindent \textit{Proof of \thmref{kernel-pinvkernel}}:\\
+We first repeat the commutative diagram
+relating the SVDs of a matrix and its pseudo-inverse,
+specialized to a square matrix.
+
+\begin{center}
+    \begin{tikzcd}
+	    \R^n \arrow[rr, "M", bend left] \arrow[dd, "V^\top", swap, two heads, bend right]
+	    &  & \R^n \arrow[dd, "U^\top", swap, two heads, bend right] \arrow[ll, "M^+", bend left]                       \\
+	\ & \  & \\
+	\co \ker M \arrow[uu, "V", harpoon, hook, bend right]  \arrow[rr, "\Sigma", bend right]
+	&  & \im M \arrow[uu, "U", harpoon, hook, bend right] \arrow[ll, "\inv{\Sigma}", bend right]
+    \end{tikzcd}
+\end{center}
+
+Note that $\im M$ is also $\co\ker \pinv{M}$,
+by reading the diagram counter-clockwise.
+The SVD of the transpose of $M$
+can be attained by transposing each of the elements of $M$:
+\begin{align}
+	M^\top
+	&= {\left(U \Sigma V^\top\right)}^\top\\
+	&= V \Sigma U^\top
+\end{align}
+
+This can be summarized in the commutative diagram below.
+
+\begin{center}
+    \begin{tikzcd}
+	    \R^n \arrow[rr, "M", bend left] \arrow[dd, "V^\top", swap, two heads, bend right]
+	    &  & \R^n \arrow[dd, "U^\top", swap, two heads, bend right] \arrow[ll, "M^\top", bend left]                       \\
+	\ & \  & \\
+	\co \ker M \arrow[uu, "V", harpoon, hook, bend right]  \arrow[rr, "\Sigma", bend right]
+	&  & \im M \arrow[uu, "U", harpoon, hook, bend right] \arrow[ll, "\Sigma", bend right]
+    \end{tikzcd}
+\end{center}
+
+This implies that $\im M = \co\ker M^\top$.
+But for a symmetric matrix,
+$M = M^\top$,
+and so $\co\ker M = \co\ker M^\top = \im M$.
+But above, we saw that $\im M = \co\ker \pinv{M}$,
+and therefore $\co\ker M = \co\ker \pinv{M}$,
+which further implies that $\ker M = \ker \pinv{M}$.
+\[\QED\]
 
 These stationary points have been identified previously,
 but nomenclature is not standard:
@@ -735,8 +794,17 @@ call them \emph{stationary points}~\cite{byrd2004},
 since they are stationary with respect to the merit function $g$.
 To avoid confusion between these incommensurate conventions
 or with the stationary points of the function $f$,
-we call a point where the gradient lies in the kernel
-of the Hessian a \emph{gradient-flat} point.
+we introduce our own terminology.
+
+\begin{definition}{Gradient-Flat Points}{gfp}
+	A point $\theta\in\R^n$ is a \emph{gradient-flat} point
+	of a twice continuously-differentable function
+	$f\from\R^n\to\R$ if
+	\begin{equation}
+		\grad{f}{\theta} \in \ker \hess{f}{\theta}
+	\end{equation}
+\end{definition}
+
 This name was chosen because a function is \emph{flat}
 when its Hessian is 0, meaning every direction is in the kernel,
 and so it is locally flat around a point in a given direction
@@ -754,8 +822,9 @@ locally linear up to second order.
 There is an alternative view of gradient-flat points
 based on the squared gradient norm function $g$.
 All gradient-flat points are stationary points
-of the gradient norm,
-which may in principle be local minima, maxima, or saddles,
+of the gradient norm:
+they are zeroes for $\nabla g$.
+They may in principle be local minima, maxima, or saddles,
 while the global minima of the gradient norm are critical points.
 When they are local minima of the gradient norm,
 they can be targets of convergence
@@ -763,7 +832,7 @@ for methods that use
 first-order approximations of the gradient map,
 as in gradient norm minimization and in Newton-type methods.
 Strict gradient-flat points, then,
-can be \enquote{bad local minima} of the gradient norm,
+can be bad local minima of the gradient norm,
 and therefore prevent the convergence of
 second-order root-finding methods
 to critical points,
@@ -802,10 +871,11 @@ for understanding the results of applying
 second-order critical point-finding methods to more complex,
 higher-dimensional neural network losses.
 
-As our model function, we choose
-\begin{equation}\equationlabel{toy}
-    f(x, y) = 1/4 x^4 - 3x^2 + 9x + 0.9y^4 + 5y^2 + 40
-\end{equation}
+\begin{example}{A Quartic Polynomial with a Gradient-Flat Point}{toy}
+	\begin{equation}\equationlabel{toy}
+	    f(x, y) = 1/4 x^4 - 3x^2 + 9x + 0.9y^4 + 5y^2 + 40
+	\end{equation}
+\end{example}
 
 \begin{figure}
 	\includegraphics[width=0.9\linewidth]{img/chapter3/toy_problem.pdf}
@@ -848,7 +918,8 @@ As our model function, we choose
 	The $x$ axis is shared between panels.}\figurelabel{toy}
 \end{figure}
 
-It is plotted in~\figureref{toy}A, central panel.
+\equationref{toy} is plotted in~\figureref{toy}A,
+central panel.
 This quartic function has two affine subspaces
 of points with non-trivial Hessian kernel,
 defined by $[\pm\sqrt{2}, y]$.
