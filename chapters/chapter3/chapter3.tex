@@ -661,7 +661,7 @@ is constant, indicating that they are the stationary points
 of first-order optimization algorithms
 like gradient descent and its accelerated variants.
 
-In the construction of our critical point finding methods in
+In our construction of the critical point-finding methods in
 \chapterref{two},
 we used a linear approximation of the behavior
 of the gradient function
@@ -670,12 +670,15 @@ at a point $x + p$ given the local information at a point $x$
     \grad{f}{x + p} \approx \grad{f}{x} + \hess{f}{x}p
 \end{equation}
 
-The approximation on the right-hand side is constant whenever
-$p$ is an element of $\ker{\hess{f}{x}}$.
-When $\hess{f}{x}$ is non-singular,
-this is only satisfied when $p$ is $0$,
-and so the whole expression is $0$
-only if $\grad{f}{x}$ is $0$.
+Solving this equation for the value of $p$
+that makes the left-hand side $0$
+gave us the Newton update
+\begin{equation}
+	\pinv{\hess{f}{x}}\grad{f}{x}
+\end{equation}
+\noindent which is only $0$,
+for a non-singular Hessian,
+if $\grad{f}{x}$ is $0$.
 For a singular Hessian,
 the update $p$ is zero iff $\grad{f}{x}$ is
 in the kernel of the pseudoinverse.
@@ -684,18 +687,20 @@ In gradient norm minimization,
 we search for critical points
 by applying first-order optimization methods
 to the squared gradient norm function,
-$g(\theta) = \sgn{L}{\theta}$.
+$g(\theta) = \sgn{L}{\theta}$,
+These methods also make a linear approximation
+of the gradient function of $L$.
 The gradient function of $g$ is
 \begin{equation}
 	\grad{g}{x} = \hess{f}{x}\grad{f}{x}
 \end{equation}
-As with Newton methods, in the invertible case
+\noindent As with Newton methods, in the invertible case
 the updates are zero iff $\grad{f}{x}$ is 0.
 In the singular case,
 the updates are zero if the gradient is in the Hessian's kernel.
 
 In the case of invertible Hessians, then,
-these methods can guarantee.
+these methods can guarantee convergence to critical points.
 However, neural network Hessians are generally singular,
 especially in the overparameterized case~\cite{sagun2017,ghorbani2019},
 meaning the kernel is non-trivial,
@@ -789,7 +794,7 @@ the strict gradient-flat (\failcolor{})
 and critical (\successcolor{}) points of this function
 (\figureref{toy}A).
 Then, we will observe the behavior of Newton-MR
-when applied to it (\figureref{toy}B-C)
+when applied to it (\figureref{toy}B)
 and note similarities to the results in \figureref{nonlinear-failure}.
 We will use this simple, low-dimensional example
 to demonstrate principles useful
@@ -991,16 +996,11 @@ is small.
 
 The relative residual norm, $r$,
 measures the size of the error
-of an approximate solution to the Newton system.
-Introducing the symbols $H$ and $g$,
-for the Hessian and gradient at a query point,
-the Newton system may be written
-$0 = Hp + g$
-and $r$ is then
+of an approximate solution to the Newton system:
 \begin{equation}
     r(p) = \frac{\norm{Hp + g}}{\norm{H}_F \norm{p} + \norm{g}}
 \end{equation}
-where $\norm{M}_F$ of a matrix $M$ is its Frobenius norm.
+\noindent where $\norm{M}_F$ of a matrix $M$ is its Frobenius norm.
 Since all quantities are non-negative,
 $r$ is non-negative;
 because the denominator bounds the numerator,
@@ -1030,11 +1030,11 @@ After normalization, it becomes
 \begin{equation}
     r_H(p) = \frac{\norm{H(Hp + g)}}{\norm{H}_F \norm{Hp + g}}
 \end{equation}
-Note that this value is also small when the gradient lies
-primarily along the eigenvalues of smallest magnitude
+\noindent Note that this value is also small when the gradient lies
+primarily along the eigenvalues of smallest magnitude.
 On each internal iteration, MR-QLP checks whether
 either of these values is below a tolerance level
-(in our experiments, 5e-4)
+(the hyperparameter \texttt{rtol}; in our experiments, 5e-4)
 and if either is, it ceases iteration.
 With exact arithmetic,
 either one or the other of these values
@@ -1045,7 +1045,7 @@ See~\cite{choi2011} for details.
 Under this relaxed definition of gradient-flatness,
 there will be a neighborhood of approximate gradient-flat points
 around a strict, exact gradient-flat point
-for functions with Lipschitz-smooth gradients and Hessians.
+for functions with Lipschitz gradients and Hessians.
 Furthermore, there might be connected sets of non-null Lebesgue measure
 which all satisfy the approximate gradient-flatness condition
 but none of which satisfy the exact gradient-flatness condition.
