@@ -300,6 +300,16 @@ from the world of optimization can be applied to it:
 stochastic methods, momentum, adaptive gradients,
 and so on.
 This is in contrast to the Newton methods reviewed below.
+In \chapterref{three},
+we will apply back-tracking line search%
+~\cite{armijo1966}
+along gradient descent directions
+with the Wolfe conditions for line search termination%
+~\cite{wolfe1971}
+as our optimization algorithm.
+For more on back-tracking line search,
+see~\sectionref{guarded}
+and~\cite[Section 9.2]{boyd2004}.
 
 \section{Exact Newton Methods}\sectionlabel{exact}
 
@@ -539,6 +549,15 @@ where the quality of the solution doubles,
 from approximately 1e-5
 to approximately 1e-10,
 between iterations $4$ and $5$.
+This rate is so fast that
+for practical purposes,
+the number of steps required during this phase
+can be bounded from above by $6$%
+~\cite[Section 9.5]{boyd2004}.
+See~\cite[Chapters 2 \& 11]{nocedal2006}
+for proofs of this convergence rate
+in various settings
+(in particular, Theorem 11.7).
 
 \subsection{Pseudo-Inverse Newton}\sectionlabel{pseudoinverse}
 
@@ -580,8 +599,9 @@ defined below.
 
 In this case, the solution $p^\star$
 can be obtained by applying the
-(Moore-Penrose) pseudo-inverse of the Hessian
-to the gradient.
+(Moore-Penrose) pseudo-inverse%
+~\cite{penrose1955}
+of the Hessian to the gradient.
 We will define this pseudo-inverse
 by means of the singular value decomposition.
 We will need several properties
@@ -617,7 +637,9 @@ or composition, of three matrices.
 It can be shown that every matrix has a
 singular value decomposition~\cite{strang1993}.
 The singular value decomposition arises
-as the specialization of the First Isomorphism Theorem
+from the specialization of the First Isomorphism Theorem
+(aka the canonical decomposition,
+see~\cite[Theorem 2.7]{aluffi2009})
 to the category of vector spaces and linear maps.
 We state it here in terms of functions,
 for readers not familiar with category theory,
@@ -823,7 +845,7 @@ in our exact Newton algorithms, \algoref{newton} and \algoref{newtonPI},
 with an approximate optimization,
 based on iterative solutions to linear systems of equations.
 We will focus on the Krylov subspace methods
-(\secref{krylov}).
+(\sectionref{krylov}).
 
 \subsection{Optimization Approach to Division}\sectionlabel{div}
 
@@ -868,7 +890,7 @@ Let us denote the inverse of $\theta_t$
 as $\gamma^\star$.
 This pair satisfies
 \begin{equation}
-	\gamma^\star = \argmin_{\gamma \in \R_{>0}} \inv{\gamma} - \theta_t
+	\gamma^\star = \argmin_{\gamma \in \R} \inv{\gamma} - \theta_t
 \end{equation}
 \noindent
 to which we can apply Newton-Raphson
@@ -1084,7 +1106,7 @@ produces a step that is \emph{conjugate}
 to all previous steps
 with respect to the current Hessian $H$,
 as defined below.
-See~\cite{boyd2004} for details on this algorithm.
+See~\cite[Chapter 5]{nocedal2006} for details on this algorithm.
 \begin{definition}{Conjugate Vectors}{conjugate}
 	Two vectors $x$ and $y$ are \emph{conjugate}
 	with respect to the symmetric matrix $M$ if
@@ -1144,6 +1166,8 @@ defined below.
 are constructed iteratively,
 with each new vector produced by
 means of matrix-vector multiplication.
+For more on Krylov subspaces,
+see~\cite[Section 5.1]{nocedal2006}.
 
 The choice of conjugate gradient is motivated
 by the fact that, for a smooth, convex
@@ -1271,7 +1295,12 @@ using $1$ for $\theta_0$.
 
 The two most common methods for avoiding
 these issues are damping (\sectionref{damped})
-and back-tracking line search (\sectionref{guarded}).
+and back-tracking line search (\sectionref{guarded})%
+\footnote{%
+There are also trust-region methods.
+See~\cite[Chapter 6 and Section 11.2]{nocedal2006}
+for more on practical Newton methods.
+}.
 The former takes the approach of generating
 multiple Newton-type steps and selecting
 the best one.
@@ -1385,12 +1414,13 @@ This is not entirely artificial.
 First, the Newton step is invariant to affine transformations
 of the parameterization of the function,
 and so there is a meaning to unit step size
-that is absent in first-order methods.
+that is absent in first-order methods%
+~\cite[Section 9.5]{boyd2004}.
 Second, and more critically,
 the rapid local convergence of Newton methods
 requires a unit step size
-and collapses if non-unit step sizes are chosen
-(for both claims, see~\cite{boyd2004,nocedal2006,roosta2018}).
+and collapses if non-unit step sizes are chosen%
+~\cite[Theorems 11.2, 11.7, \& 11.10]{nocedal2006}.
 However, when outside the region
 of local convergence,
 the pure Newton step is frequently too long.
@@ -1412,11 +1442,14 @@ is cast as the solution to an optimization problem:
 	\alpha^\star{}
 	\defeq \argmin_{\alpha \in \R_{\geq 0}} c(\theta + \alpha p)
 \end{equation}
-\noindent for some merit function $c$.
+\noindent for some \emph{merit function}, $c$.
 When selecting a step size for a typical optimization problem,
 the natural choice is $c(x) = f(x)$, where $f$ is the loss.
 For critical point-finding,
 the natural choice is $c(x) = \sgn{f}{x}$.
+Note that damped Newton methods also involve a choice of merit function,
+to select between the potential iterates
+produced by different values of $\gamma$.
 
 Of course, this problem cannot typically be solved exactly.
 In back-tracking line search,
@@ -1564,7 +1597,14 @@ algorithm for critical point-finding in
 \chapterref{three},
 so we provide it in pseudocode here
 (\algoref{nmr}).
-\\
+In this pseudocode,
+MR-QLP is the minimum residual solver
+based on the QLP decomposition
+from~\cite{choi2011}
+described in \sectionref{krylov} and
+BTLS is the back-tracking line search method
+\algoref{roosta-btls}.
+
 \begin{algorithm}[h]
     \SetAlgoLined{}
     \textbf{Require}
@@ -1599,13 +1639,6 @@ so we provide it in pseudocode here
     \algolabel{nmr}
 
 \end{algorithm}
-\noindent In this pseudocode,
-MR-QLP is the minimum residual solver
-based on the QLP decomposition
-from~\cite{choi2011}
-described in \sectionref{krylov} and
-BTLS is the back-tracking line search method
-\algoref{roosta-btls}.
 
 We briefly review the hyperparameters of
 MR-QLP here.
@@ -1627,7 +1660,7 @@ residual or the residual projected onto the Hessian co-kernel
 is less than \texttt{rtol},
 following suitable normalization,
 the algorithm terminates.
-Details on the definitions of these quantities
+Details on the definitions of these residuals
 are deferred to \chapterref{three}.
 Not listed above is the \texttt{trancond} hyperparameter,
 which determines when the algorithm transitions between
