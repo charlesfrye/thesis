@@ -797,7 +797,13 @@ for an update $p^{\star}$.
 We see that whenever a vector $g$
 is in the image of the Hessian, $\hess{f}{\theta}$,
 we can apply the pseudoinverse, $\pinv{\hess{f}{\theta}}$,
-to $-g$ to obtain a vector that is the pre-image of $-g$
+to $-g$ to obtain a vector that is the pre-image\footnote{%
+	The \emph{pre-image} of $y\in\cY$
+	with respect to a function
+	$f\from\cX\to\cY$
+	is the set of all inputs that map to $y$:
+	$\Set{x\in\cX \suchthat f(x) = y}$.
+} of $-g$
 with respect to the Hessian.
 We choose this as our update,
 obtaining the algorithm below.
@@ -982,7 +988,7 @@ in terms of this $\argmin$ operation.
 	$t \leftarrow t + 1$
     }%
     \caption{Least-Squares Exact Newton}
-    \algolabel{newtonLS}
+    \algolabel{newtonLS-exact}
 \end{algorithm}
 
 Our two exact Newton methods above
@@ -1008,7 +1014,7 @@ which we call \emph{least-squares inexact Newton}.
 	$t \leftarrow t + 1$
     }%
     \caption{Least-Squares Inexact Newton}
-    \algolabel{newtonLS}
+    \algolabel{newtonLS-inexact}
 \end{algorithm}
 
 Here, lsq-solve is a function
@@ -1038,7 +1044,7 @@ Second, it transfers immediately to the case
 where the Hessian matrix is non-invertible.
 There are two issues in this case.
 Firstly,
-the $\argmin$ in \algoref{newtonLS}
+the $\argmin$ in \algoref{newtonLS-exact}
 need no longer be a single value,
 but can instead be a set
 (indeed, a linear subspace!).
