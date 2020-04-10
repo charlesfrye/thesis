@@ -192,10 +192,10 @@ of finding a point in
 the sets defined by \equationref{def-epscp} or \equationref{sqrteps}
 is to apply a first-order optimization algorithm.
 In the case of critical point-finding,
-we define an auxiliary function $g$,
+we define an auxiliary function $G$,
 equal to half the squared gradient norm:
 \begin{equation}\equationlabel{def-g}
-	g(\theta) = \frac{1}{2}\sgn{L}{\theta}
+	G(\theta) = \frac{1}{2}\sgn{L}{\theta}
 \end{equation}
 \noindent and apply our first-order optimization algorithm to it.
 
@@ -225,19 +225,19 @@ so let's derive them by hand.
 \begin{theorem}{Gradient of Squared Gradient Norm}{gnm-grad}
 	\emph{Let $L$ be a twice-differentiable function
 	from $\Theta$ to $\R$
-	and define $g(\theta) = \frac{1}{2}\sgn{L}{\theta}$.
-	Then the gradient function of $g$, $\grad{g}{\theta}$,
+	and define $G(\theta) = \frac{1}{2}\sgn{L}{\theta}$.
+	Then the gradient function of $G$, $\grad{G}{\theta}$,
 	is given by
 	\begin{equation}
-		\grad{g}{\theta} = \hess{L}{\theta}\grad{L}{\theta}
+		\grad{G}{\theta} = \hess{L}{\theta}\grad{L}{\theta}
 	\end{equation}
 	}
 \end{theorem}
 
 \noindent \textit{Proof of \thmref{gnm-grad}}:\\
-If we apply $g$ to a point $\theta + \eps$,
+If we apply $G$ to a point $\theta + \eps$,
 \begin{equation}
-	g(\theta + \eps) = \frac{1}{2}\sgn{L}{\theta + \eps}
+	G(\theta + \eps) = \frac{1}{2}\sgn{L}{\theta + \eps}
 \end{equation}
 \noindent we see that the right-hand-side
 contains the same expression as the left-hand-side
@@ -246,7 +246,7 @@ of the definition of the Hessian function,
 We can therefore replace that expression
 with the decomposition on the right-hand-side:
 \begin{equation}
-	g(\theta + \eps) = \frac{1}{2}\snorm{%
+	G(\theta + \eps) = \frac{1}{2}\snorm{%
 	\grad{L}{\theta} + \hess{L}{\theta}\epsilon + o(\epsilon)}
 \end{equation}
 \noindent Then, we expand the squared norm into its constituent terms,
@@ -255,12 +255,12 @@ group like terms\footnote{%
 as does any $o(\eps)$.},
 and simplify:
 \begin{align}
-	g(\theta + \eps) &= \frac{1}{2}\sgn{L}{\theta}
+	G(\theta + \eps) &= \frac{1}{2}\sgn{L}{\theta}
 	+ \underbrace{\frac{1}{2}\snorm{\hess{L}{\theta}\eps}
 	+ \frac{1}{2}\snorm{o(\eps)}}_{o(\eps)}
 	+ \grad{L}{\theta}^\top\hess{L}{\theta}\eps
 	+ o(\eps)\\
-	g(\theta + \eps) &= g(\theta)
+	G(\theta + \eps) &= G(\theta)
 	+ {\left(\hess{L}{\theta}\grad{L}{\theta}\right)}^\top\epsilon
 	+ o(\epsilon)
 \end{align}
@@ -268,7 +268,7 @@ and simplify:
 by pattern-matching to \defref{gradient},
 that the gradient function of $g$ is
 \begin{equation}\equationlabel{gnm-grad}
-	\grad{g}{\theta} = \hess{L}{\theta}\grad{L}{\theta}
+	\grad{G}{\theta} = \hess{L}{\theta}\grad{L}{\theta}
 \end{equation}
 \QED\\
 
