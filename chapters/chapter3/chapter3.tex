@@ -100,7 +100,8 @@ damped Newton (\algoref{damped-newton}),
 and gradient norm minimization by
 gradient descent with back-tracking line search
 (BTLS-GNM)
-are compared.
+are compared
+(\sectionref{dlae-results}).
 
 Additional results regarding these critical point-finding methods
 and the deep linear autoencoder are
@@ -585,7 +586,7 @@ Both factors should reduce the variety in recovered critical points%
 experiments not presented here and this intuition is borne out.
 See~\cite{frye2019}.}.
 To half of the initial points attained in this manner,
-we add Gaussian noise of with variance 1e-2%
+we add Gaussian noise of with variance 1e-2
 (an SNR of approximately 2.8 dB).
 In separate experiments,
 noise of this magnitude
@@ -600,7 +601,7 @@ the diversity in critical points recovered%
 	\begin{center}
 		\includegraphics[width=\textwidth]{img/chapter3/perf-comparison.pdf}
 	\end{center}
-	\caption{\textbf{Newton-MR, Damped Newton, and Gradient Norm Minimization
+	\caption{\textbf{Newton-MR, Damped Newton, and BTLS-Gradient Norm Minimization
 	can Recover Critical Points of a Deep Linear Autoencoder}}
 	\figurelabel{perf-comparison}
 \end{figure}
@@ -608,14 +609,79 @@ the diversity in critical points recovered%
 \subsubsection{Cutoffs Must be Set Strictly}%
 \sectionlabel{dlae-cutoffs}
 
+As noted in \sectionref{test},
+one of the key purposes of applying our algorithms
+to a test problem is to obtain estimates for the value
+of $\eps$ necessary to guarantee that the loss and index values
+for members of $\Theta^L_{\ecp}$
+are similar to those of $\Theta^L_{\cp}$.
+With such a value in hand,
+we can terminate our critical point-finding algorithms early,
+as soon as they produce a candidate critical point with
+squared gradient norm below $\eps$.
+
+We simulate the results of such a procedure
+by applying a \enquote{cutoff}
+to the traces from \figureref{perf-comparison}A.
+We truncate each run at the first $T$ such that
+$\sgn{L}{\theta_T} < \eps$.
+As our cutoffs,
+we choose the value used to filter the traces in
+\figureref{perf-comparison}, 1e-10,
+the value used as a filter in~\cite{pennington2017}, 1e-6,
+a looser criterion of 1e-4,
+and $\infty$.
+The latter corresponds to no cutoff,
+taking the initial points,
+the iterates of the optimization algorithm,
+as candidate critical points.
+The results are in \figureref{cutoffs}.
+
 \begin{figure}[h]
 	\begin{center}
 		\includegraphics[width=0.7\textwidth]{img/chapter3/cutoffs.pdf}
 	\end{center}
 	\caption{\textbf{Cutoffs Above 1e-10 are Insufficient to Guarantee
-	Accurate Loss and Index Recovery}.}
+	Accurate Loss and Index Recovery}.}{%
+	As in \figureref{perf-comparison},
+	$\eps$-CPs are plotted in blue
+	over analytical CPs in gray.
+	For each panel,
+	$\eps$-CPs are selected by taking
+	the 100 runs of Newton-MR in \figureref{perf-comparison}A
+	and taking the first point whose squared gradient norm is below
+	the cutoff value, $\eps$, in the top-left corner.
+	Horizontal and vertical axes are shared between panels.
+}
 	\figurelabel{cutoffs}
 \end{figure}
+
+Notably, using the value of 1e-10
+that, as a filter,
+resulted in accurate recovery of loss and index values
+(\figureref{perf-comparison}),
+introduces a small amount of error,
+in particular at low and high values of the index
+(\figureref{cutoffs}A).
+This suggests that
+a strategy of running
+critical point-finding methods until termination
+and then filtering
+gives better results than
+a strategy of early termination.
+Looser cutoff values
+(\figureref{cutoffs}B,C)
+result in quantitatively worse
+recovery of loss-index values
+but qualitatively similar loss-index relationships.
+Interestingly, applying no cutoff at all,
+as in \figureref{cutoffs}D,
+results in a convex upwards relationship
+between index and loss,
+much like that reported in~\cite{dauphin2014} and~\cite{pennington2017}
+for non-linear networks,
+despite the fact that the true relationship is linear.
+
 
 \section{Methods that Work on a Linear Network Fail on a Non-Linear Network}%
 \sectionlabel{nonlinear-failure}
@@ -756,7 +822,7 @@ specialized to a square matrix.
 Note that $\im M$ is also $\co\ker \pinv{M}$,
 by reading the diagram counter-clockwise.
 The SVD of the transpose of $M$
-can be attained by transposing each of the elements of $M$:
+can be attained by transposing each of the elements of the SVD\@:
 \begin{align}
 	M^\top
 	&= {\left(U \Sigma V^\top\right)}^\top\\
