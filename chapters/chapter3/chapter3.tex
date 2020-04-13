@@ -430,16 +430,17 @@ and solve for 0.
 
 We start with $W_2$:
 \begin{align}
-	\grad{l_{W_2}}{W_1, W_2} &= \grad{\cL}{W} W_1^\top\\
+	\grad{l_{W_2}}{W_1, W_2} i.e.~when &= \grad{\cL}{W} W_1^\top\\
 	0 &= \grad{\cL}{W} W_1^\top\\
 	0 &= 2 XX^\top\left(W_2 W_1 - I\right) W_1^\top\\
-	W_1^\top &= W_2W_1 W_1^\top
+	W_1^\top &= W_2W_1 W_1^\top\equationlabel{last-line-W2-grad}
 \end{align}
-\noindent where the transition to the third line
+\noindent where the transition to \equationref{last-line-W2-grad}
 used the invertibility of $XX^\top$.
 This equation is satisfied
 whenever $W_2 W_1$ is equivalent to the identity
-matrix when restricted to the co-kernel of $W_1$,
+matrix when restricted to the co-kernel of $W_1$
+(i.e.~when $W_2W_1$ is a projection matrix onto that subspace),
 which is the range of $W_1^\top$.
 
 This isn't sufficient to completely determine
@@ -546,7 +547,7 @@ analytical critical points.
 		\includegraphics[width=0.5\textwidth]{img/chapter3/dlae-cps.pdf}
 	\end{center}
 	\caption{\textbf{The Analytical Critical Points
-	of a Deep Linear Autoencoder}}
+	of a Deep Linear Autoencoder}.}
 	\figurelabel{dlae-cps}
 \end{figure}
 
@@ -597,12 +598,28 @@ the diversity in critical points recovered%
 \subsubsection{Critical Point-Finding Methods Have Differential Performance}%
 \sectionlabel{dlae-perf-comparison}
 
+When applied to the problem of finding the critical points
+of the deep linear autoencoder problem outlined above,
+the three critical point finding methods,
+Newton-MR, damped Newton, and
+gradient norm minimization by gradient descent with backtracking line search
+(BTLS-GNM)
+have wildly different performance.
+
 \begin{figure}[h]
 	\begin{center}
 		\includegraphics[width=\textwidth]{img/chapter3/perf-comparison.pdf}
 	\end{center}
 	\caption{\textbf{Newton-MR, Damped Newton, and BTLS-Gradient Norm Minimization
 	can Recover Critical Points of a Deep Linear Autoencoder}.}{%
+		\textbf{A-C}. Squared gradient norms at each iteration
+		of the three critical point-finding algorithms.
+		Runs that terminate with squared gradient norm below 1e-10
+		in \successcolor{},
+		otherwise in \failcolor{}.
+		The y-axis is truncated at 1e-30,
+		since only runs that terminate at or near $\theta=0$
+		reach substantially below this value.
 		Horizontal and vertical axes are shared across
 		the top row and the bottom row of panels separately.
 	}
@@ -689,14 +706,57 @@ despite the fact that the true relationship is linear.
 \section{Methods that Work on a Linear Network Fail on a Non-Linear Network}%
 \sectionlabel{nonlinear-failure}
 
+Unfortunately,
+success on this test problem does not guarantee
+success on the original problem of interest.
+When applied to a nonlinear network,
+even with the same data,
+these methods fail.
+
 \begin{figure}[h]
 	\begin{center}
-		\includegraphics[width=0.5\textwidth]{img/chapter3/nonlinear-failure.pdf}
+		\includegraphics[width=0.67\textwidth]{img/chapter3/nonlinear-failure.pdf}
 	\end{center}
 	\caption{\textbf{Newton-MR Fails to Find Critical Points
-	on a Non-Linear Network}}
+	on a Non-Linear Network}.}
+	\textbf{A}. Squared gradient norms across iteration
+	for ten runs of Newton-MR applied to a non-linear network.
+	\textbf{B}. Loss and index values at 1000 iterations
+	for the runs of Newton-MR in \emph{A}.
 	\figurelabel{nonlinear-failure}
 \end{figure}
+
+\figureref{nonlinear-failure} shows
+results for Newton-MR applied to
+a network with two hidden layers of sizes $8$ and $16$
+and Swish non-linearity~\cite{ramachandran2017},
+but the same data as in~\sectionref{dlae-results}.
+Results for other algorithms are qualitatively similar.
+The squared gradient norms do not drop nearly as low
+(greater than 1e-18, versus 1e-30
+in the linear case,~\figureref{perf-comparison}A),
+even though the iteration budget is doubled.
+All runs exhibit a \enquote{plateau},
+unlike the successful runs
+in~\figureref{perf-comparison}A,
+which exhibited linear or faster convergence
+to a point at which no further progess could be made.
+A handful of experiments with much larger iteration counts
+indicated that this plateau persists even as the computational budget increases
+(data not shown).
+It is unclear whether the loss and index values
+(\figureref{nonlinear-failure}B)
+recovered in this case are accurate.
+
+This motivates a re-analysis of the critical point-finding methods,
+in particular in the singular case.
+We will see, in the following section,
+that the plateau behavior in \figureref{nonlinear-failure}
+can be recreated on a very simple test problem,
+so long as that problem has a point where
+the gradient lies in the Hessian's kernel:
+a \emph{gradient-flat} point.
+
 
 \section{Gradient-Flat Regions can Cause Critical Point-Finding Methods to Fail}%
 \sectionlabel{gfr}
@@ -705,15 +765,15 @@ In this section,
 we introduce and define gradient-flat points and
 explain why they are problematic for second-order
 critical point-finding methods
-\sectionref{theory},
+(\sectionref{theory}),
 with the help of a low-dimensional example
 to build intuition
-\sectionref{toy}.
+(\sectionref{toy}).
 In numerical settings and in high dimensions,
 approximately gradient-flat points are also important,
 and so we define a quantitative index of gradient-flatness
 based on the residual norm of the Newton update
-\sectionref{approxgfp}.
+(\sectionref{approxgfp}).
 Connected sets of these numerically gradient-flat points
 are gradient-flat regions,
 which cause trouble for
@@ -1089,6 +1149,14 @@ This suggests that Newton methods
 using the gradient norm merit function will be biased
 towards finding gradient-flat points
 that also have low gradient norm.
+
+Finally, we note that the behavior of the failed runs
+in the bottom panel of \figureref{toy}B
+matches that of the runs in \figureref{nonlinear-failure}.
+In particular, after a brief period of rapid improvement,
+the squared gradient norm plateaus at relatively large value
+given by the value of the gradient norm at the gradient-flat point.
+(in this case, 1e1).
 
 \subsection{Approximate Gradient-Flat Points Form Gradient-Flat Regions}%
 \sectionlabel{approxgfp}
