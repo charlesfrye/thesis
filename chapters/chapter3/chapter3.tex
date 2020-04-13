@@ -523,7 +523,7 @@ of the deep linear autoencoder.
 
 With all of these choices in place,
 we can now calculate the loss and index values of the analytical
-critical points for a neural network loss surface.
+critical points for a neural network loss function.
 These are plotted in \figureref{dlae-cps}.
 The squared gradient norms of these points are generally not $0$,
 but on the order of 1e-32.
@@ -747,6 +747,9 @@ indicated that this plateau persists even as the computational budget increases
 It is unclear whether the loss and index values
 (\figureref{nonlinear-failure}B)
 recovered in this case are accurate.
+The results here are just a single example;
+in \sectionref{gfr-results},
+we will see that these phenomena recur on many neural network losses.
 
 This motivates a re-analysis of the critical point-finding methods,
 in particular in the singular case.
@@ -756,6 +759,9 @@ can be recreated on a very simple test problem,
 so long as that problem has a point where
 the gradient lies in the Hessian's kernel:
 a \emph{gradient-flat} point.
+This analysis, and the experiments in
+\sectionref{gfr-results} that it motivates,
+are also presented in~\cite{frye2020}.
 
 
 \section{Gradient-Flat Regions can Cause Critical Point-Finding Methods to Fail}%
@@ -1155,7 +1161,7 @@ in the bottom panel of \figureref{toy}B
 matches that of the runs in \figureref{nonlinear-failure}.
 In particular, after a brief period of rapid improvement,
 the squared gradient norm plateaus at relatively large value
-given by the value of the gradient norm at the gradient-flat point.
+given by the value of the gradient norm at the gradient-flat point
 (in this case, 1e1).
 
 \subsection{Approximate Gradient-Flat Points Form Gradient-Flat Regions}%
@@ -1279,8 +1285,584 @@ computing a high-quality inexact Newton step is computationally infeasible.
 \section{Gradient-Flat Regions Abound on Several Neural Network Losses}%
 \sectionlabel{gfr-results}
 
+To determine whether gradient-flat regions are
+responsible for the poor behavior of Newton methods
+on deep neural network (DNN) losses
+demonstrated in~\figureref{nonlinear-failure},
+we applied Newton-MR to the losses of several neural networks.
+We focused on Newton-MR because we
+found that a damped Newton method like that in~\cite{dauphin2014}
+performed poorly, as reported for the XOR problem in~\cite{coetzee1997}.
+
+\subsection{Gradient-Flat Regions on an Autoencoder Loss}
+
+We first present results for two networks
+trained on 10k MNIST~\cite{lecun2010} images downsized to 4$\times$4,
+similar to the downsized datasets in~\cite{dauphin2014,pennington2017}.
+Images were cropped to 20$\times$20 and rescaled to 4$\times$4
+using PyTorch~\cite{paszke2019},
+then $z$-scored.
+This was done to improve the condition of the data covariance matrix,
+which is very poor for MNIST due to the low variance in the border pixels.
+It also reduced the size of the network.
+Non-linear classification networks trained on this down-sampled data
+could still obtain accuracies above 90\%,
+better than the performance of logistic regression ($\approx87\%$).
+
+First, we consider a nonlinear autoencoder.
+This network had two hidden layers of $8$ and $16$ units,
+used Swish non-linearities.
+Unlike previous networks, this network had biases,
+meaning each layer performed an affine rather than a linear transformation.
+Gradient norms for the first 100 iterations of Newton-MR
+applied to this loss
+appear in \figureref{gfp-dnn}A.
+As in the non-linear autoencoder applied to the multivariate Gaussian data
+(\figureref{nonlinear-failure}),
+we found that, after 500 iterations,
+all of the runs had squared gradient norms
+over 10 orders of magnitude greater than the typical
+values observed after convergence in the linear case
+($<$1e-30, \figureref{perf-comparison}A).
+14\% of runs terminated with squared gradient norm
+below the filtering value of 1e-10
+and so found likely critical points
+(\successcolor{}).
+Twice as many runs terminated above that cutoff
+but terminated in a gradient-flat region
+(28\%, \failcolor{}),
+while the remainder were above
+the cutoff but were not in a gradient-flat region
+at the final iteration
+(black).
+
+\begin{figure}[htpb]
+	\begin{center}
+	    \includegraphics[width=0.7\linewidth]{img/chapter3/gfp-dnn.pdf}
+	\end{center}
+	\caption{\textbf{Critical Point-Finding Methods
+	More Often Find Gradient-Flat Regions
+	on a Neural Network Loss}.}{%
+	\textbf{A}:
+	Squared gradient norms across the first 100 iterations of Newton-MR
+	for 100 separate runs on an auto-encoder loss.
+	Gradient norms were flat after 100 iterations.
+	See~\appref{app:networks} for details.
+	Runs that terminate with squared gradient norm below 1e-10,
+	i.e.~at a candidate critical point, in \successcolor{}.
+	Runs that terminate above that cutoff and with $r$ above $0.9$,
+	i.e.~in a gradient-flat region, in \failcolor{}.
+	All other runs in black.
+	Asterisks indicate trajectories in $\emph{B}$.
+	\textbf{B}:
+	The relative residual norm $r$,
+	an index of gradient-flatness,
+	for the approximate Newton update
+	computed by MR-QLP at each iteration
+	(solid lines)
+	for three representative traces.
+	Values are local averages with a window size of 10 iterations.
+	Raw values are plotted with reduced opacity underneath.
+	Top: non-flat, non-critical point (black).
+	Middle: flat, non-critical point (\failcolor{}).
+	Bottom: flat, critical point (\successcolor{}).
+	\textbf{C}:
+	Empirical cumulative distribution functions for
+	the final (top) and maximal (bottom) relative residual norm $r$ observed
+	during each run of Newton-MR\@.
+	Values above the cutoff for approximate gradient-flatness, $r>0.9$,
+	in \failcolor{}.
+	Observations from runs that terminated below the cutoff for critical points,
+	$\sgn{L}{\theta} <$ 1e-10,
+	indicated with \successcolor{} ticks.
+	\textbf{D}:
+	Loss and index for the maximally gradient-flat points
+	obtained during application of Newton-MR\@.
+	Points with squared gradient norm below 1e-10 in \successcolor{}.
+	Other points colored by their gradient-flatness:
+	points above $0.9$ in \failcolor{}, points below in black.
+	Only points with squared gradient norm below 1e-4 shown.
+	}\figurelabel{gfp-dnn}
+\end{figure}
+
+The relative residual norm for the Newton solution, $r$,
+is an index of gradient-flatness;
+see \sectionref{approxgfp} for details.
+The values of $r$ for every iteration
+of Newton-MR are shown for three representative traces
+in \figureref{gfp-dnn}B.
+In the top trace,
+$r$ is close to 0,
+indicating that the iterates are not in a gradient-flat region
+($r\ll0.9$, black).
+Newton methods can be substantially slowed when even a small fraction
+of the gradient is in the kernel~\cite{griewank1983}
+and can converge to points that are not gradient-flat~\cite{byrd2004}.
+By contrast, in the middle trace (\failcolor{}),
+the value of $r$ approaches $1$,
+indicating that almost the entirety of the gradient is in the kernel.
+This run terminated in a gradient-flat region,
+at effectively an exactly gradient-flat point.
+Further, the squared gradient norm at 500 iterations, 2e-5,
+is five orders of magnitude higher than the cutoff,
+1e-10.
+This is smaller than the minimum observed during optimization
+of this loss (squared gradient norms between 1e-4 and 5e1),
+indicating the presence of non-critical gradient-flat regions
+with very low gradient norm.
+Critical point-finding methods that disqualify points
+on the basis of their norm will both converge to
+and accept these points,
+even though they need not be near true critical points.
+In the bottom trace (\successcolor{}),
+the behavior of $r$ is the same,
+while the gradient norm drops much lower, to 3e-13,
+suggesting convergence to a gradient-flat region around a critical point
+that has an approximately singular Hessian.
+
+We found that 99 of 100 traces included a point
+where at least half of the gradient was in the kernel,
+according to our residual measure,
+while 89\% of traces included a point that had
+a residual greater than $0.9$,
+and 50\% included a point with $r > 0.99$
+(\figureref{gfp-dnn}C, bottom).
+This demonstrates that
+there are many regions of substantive gradient-flatness,
+in which second-order critical point-finding methods could be substantively slowed.
+
+The original purpose of applying these critical point-finding methods
+was to determine whether the no-bad-local-minima property held
+for this loss function, and more broadly to characterize
+the relationship at the critical points
+between the loss and the local curvature,
+summarized via the Morse index.
+If we look at either the iterates with the highest gradient-flatness
+(\figureref{gfp-dnn}D),
+we find that the qualitative features of the loss-index relationship reported in%
+~\cite{dauphin2014} and~\cite{pennington2017} are recreated:
+convex shape, small spread at low index that increases for higher index,
+no minima or near-minima at high values of the loss.
+However, our analysis suggests that the majority of these points are not critical points
+but either strict gradient-flat points (\failcolor{})
+or simply points of spurious or incomplete
+Newton convergence (black).
+The approximately critical points we do see (\successcolor{})
+have a very different loss-index relationship:
+their loss is equal to the loss of a network
+that has constant output equal to the mean of the data,
+and their index is low, but not 0.
+This suggests that the results presented in%
+~\cite{dauphin2014} and~\cite{pennington2017}
+are not evidence of the reported loss-index relationship at
+critical points of neural network losses.
+
+\subsection{Gradient-Flat Regions on a Classifier Loss}
+
+We repeated these experiments on a fully-connected classifier
+(aka a \emph{multilayer perceptron} or MLP)
+trained on the same MNIST images via the cross-entropy cost function.
+This network also had two hidden layers of 12 and 8 units,
+used Swish activations, and included biases.
+Unlike all networks considered up to this point,
+the regularizer $r$ was non-zero.
+Losses based on the cross entropy cost function
+can have critical points of infinite norm
+in the absence of regularization,
+and so we applied $\ell_2$ norm regularization:
+$r(\theta) = \snorm{\theta}$.
+
+\begin{figure}[!hp]
+	\begin{center}
+		\includegraphics[width=0.7\linewidth]{img/chapter3/gfp-mlp.pdf}
+	\end{center}
+	\caption{\textbf{Gradient-Flat Regions Also Appear on an MLP Loss}.}{%
+	\textbf{A}:
+	Squared gradient norms across the first 100 iterations of Newton-MR
+	for 60 separate runs on an MLP loss.
+	Runs that terminate with squared gradient norm below 1e-10
+	in \successcolor{}.
+	Runs that terminate above that cutoff and with $r$ above $0.9$,
+	in \failcolor{}.
+	All other runs in black.
+	Asterisks indicate trajectories in $\emph{B}$.
+	\textbf{B}:
+	The relative residual norm $r$,
+	for the approximate Newton update
+	computed by MR-QLP at each iteration
+	for three representative traces.
+	Values are local averages with a window size of 10 iterations.
+	Raw values are plotted with reduced opacity underneath.
+	Top: non-flat, non-critical point (black).
+	Middle: flat, non-critical point (\failcolor{}).
+	Bottom: non-flat, critical point (\successcolor{}).
+	\textbf{C}:
+	Empirical cumulative distribution functions for
+	the final (top) and maximal (bottom) relative residual norm $r$.
+	Values above the cutoff for approximate gradient-flatness, $r>0.9$,
+	in \failcolor{}.
+	Observations from runs that terminated below the cutoff for critical points,
+	$\sgn{L}{\theta} <$ 1e-10,
+	indicated with \successcolor{} ticks.
+	\textbf{D}:
+	Loss and index for the points found
+	after 500 iterations of Newton-MR\@.
+	Colors as in top-left; only points with squared gradient norm below 1e-4 shown.
+	Note that color is determined by
+	the value of $r$ on the last iteration,
+	rather than on the iteration with maximal $r$,
+	as in \figureref{gfp-dnn}.%
+	}\figurelabel{gfp-mlp}
+\end{figure}
+
+We again found that the performance of
+the Newton-MR critical point-finding algorithm was poor
+(\figureref{gfp-mlp}A)
+and that around 90\% of runs encountered a point
+with gradient-flatness above $0.9$
+(\figureref{gfp-mlp}C, bottom row).
+However, we observed that fewer runs terminated
+at a gradient-flat point
+(\figureref{gfp-mlp}C, top row).
+
+In many traces,
+the value of $r$ oscillates from values close to 1
+to middling values,
+indicating that the algorithm is bouncing in and out
+of one or more gradient-flat regions,
+rather than because of another type of spurious Newton convergence.
+This can occur when the final target of convergence
+given infinite iterations
+is a gradient-flat point,
+as in the example in~\sectionref{toy}.
+This behavior is evident in the traces presented in the top and bottom rows of
+\figureref{gfp-mlp}B.
+Even for the autoencoding network presented in \figureref{gfp-dnn},
+not all traces exhibit the monotonic behavior for the value of $r$
+apparent in \figureref{gfp-dnn}B.
+
+If we measure the loss-index relationship at the
+(mostly non-gradient-flat) final points,
+we see the same pattern as in~\figureref{gfp-dnn}:
+convex shape, separation of critical points from gradient-flat points
+(\figureref{gfp-mlp}D).
+This also holds if we look at the maximally flat points,
+as in~\figureref{gfp-dnn}D,
+or if we look at the final iterates
+of the traces in \figureref{gfp-dnn}
+(neither results shown).
+This underlines a particular problem with detecting
+convergence issues caused by a gradient-flat region.
+On any given iterate, the algorithm may be inside
+or outside the gradient-flat region,
+so it is insufficient just to examine the degree of flatness
+on one iteration,
+e.g.~the final iteration, as determined by computational budget.
+
+\subsection{Gradient-Flat Regions on an Over-Parameterized Loss}
+
+Many contemporary neural networks have extremely large parameter counts:
+in the millions and tens of millions.
+By varying definitions of the relationship
+between parameter count and size or complexity of the dataset,
+these networks are \emph{over-parameterized}.
+As described in \sectionref{alternative},
+recent theoretical results have suggested that,
+even in the possible presence of bad local minima,
+neural networks might be easily trainable if they are over-parameterized.
+It is furthermore known that increasing the number of parameters
+while holding the dataset constant increases the size of the Hessian kernel%
+~\cite{sagun2017}.
+The loss function of such networks has not been considered from the
+critical point perspective.
+
+We repeated our critical point-finding experiments
+on the loss function of a fully-connected classifier on a small subset
+of 50 0s and 1s from the MNIST dataset.
+The images were PCA-downsampled to 32 dimensions using sklearn%
+~\cite{pedregosa2011}
+the labels permuted, turning the classification task
+into a memorization task,
+as in~\cite{zhang2016}.
+This classifier had two hidden layers of sizes 32 and 4,
+no biases, also used Swish activations,
+and was trained with $\ell_2$ regularization.
+In this setting, the network is over-parameterized in several senses:
+it has a hidden layer almost as wide as the number of points in the dataset (32 vs 50),
+it has more parameters than there are examples in the dataset (1160 vs 50),
+and it is also capable of achieving 100\% accuracy
+on the task of random label memorization.
+
+We again observe that the majority of runs of Newton-MR
+terminate with high squared gradient norm
+(33 out of 50 runs above 1e-8)
+and a similar fraction
+(31 out of 50 runs)
+encounter gradient-flat points
+(\figureref{gfp-mem}A and C, bottom panel).
+The loss-index relationship looks qualitatively different,
+as might be expected for a task with random labels.
+Notice the appearance of a bad local minimum:
+the \successcolor{} point at index 0 and loss $\ln(2)$.
+
+\begin{figure}[!hp]
+	\begin{center}
+		\includegraphics[width=0.7\linewidth]{img/chapter3/gfp-mem.pdf}
+	\end{center}
+	\caption{\textbf{Gradient-Flat Regions Also Appear on an Over-Parameterized Loss}.}{%
+	\textbf{A}:
+	Squared gradient norms across 500 iterations of Newton-MR
+	for 50 separate runs on the loss of an over-parameterized network.
+	Runs that terminate with squared gradient norm below 1e-8
+	in \successcolor{}.
+	Runs that terminate above that cutoff and with $r$ above $0.9$,
+	in \failcolor{}.
+	All other runs in black.
+	Asterisks indicate trajectories in $\emph{B}$.
+	\textbf{B}:
+	The relative residual norm $r$,
+	for the approximate Newton update
+	computed by MR-QLP at each iteration
+	for three representative traces.
+	Values are local averages with a window size of 10 iterations.
+	Raw values are plotted with reduced opacity underneath.
+	Top: non-flat, non-critical point (black).
+	Middle: flat, non-critical point (\failcolor{}).
+	Bottom: flat, critical point (\successcolor{}).
+	\textbf{C}:
+	Empirical cumulative distribution functions for
+	the final (top) and maximal (bottom) relative residual norm $r$.
+	Values above the cutoff for approximate gradient-flatness, $r>0.9$,
+	in \failcolor{}.
+	Observations from runs that terminated below the cutoff for critical points,
+	$\sgn{L}{\theta} <$ 1e-10,
+	indicated with \successcolor{} ticks.
+	\textbf{D}:
+	Loss and index for the points found
+	after 500 iterations of Newton-MR\@.
+	Colors as in top-left; only points with squared gradient norm below 1e-4 shown.%
+	}\figurelabel{gfp-mem}
+\end{figure}
+
+
 \section{Conclusion}%
 \sectionlabel{conclusion}
+
+We began by seeking to understand why neural networks are so easily trained:
+despite the substantial non-convexity of their loss functions,
+first-order optimization methods produce near-global-optima
+from random initial points.
+In \chapterref{one},
+we developed the \enquote{no-bad-local-minima} (NBLM) theory,
+which posits that, like certain classes of random functions,
+the loss functions of neural networks have no local minima
+that are much worse than the global minima.
+While numerical experiments in%
+~\cite{dauphin2014} and~\cite{pennington2017}
+agreed with this hypothesis,
+more recent analytical results%
+~\cite{ding2019} suggest that it is false.
+These experiments relied on the ability to find
+the critical points of the loss function,
+and so we developed
+an understanding of critical point-finding algorithms
+in \chapterref{two} and \sectionref{theory}.
+This led us to identify gradient-flat regions,
+where the gradient is nearly in the approximate kernel of the Hessian,
+as a source of trouble for these algorithms:
+effectively, bad local minima for the problem of critical point-finding.
+We ended this chapter by observing that gradient-flat regions are a prevalent
+feature of three prototypical neural network loss functions:
+those of an autoencoder (\figureref{gfp-dnn}),
+a classifier (\figureref{gfp-mlp}),
+and an overparameterized network (\figureref{gfp-mem})
+applied to versions of the MNIST dataset.
+We now conclude the thesis by considering the implications
+of our observations for critical point-finding experiments,
+for the nature of neural network loss functions,
+and for the optimization of neural networks.
+
+The strategy of using gradient norm cutoffs to determine
+whether a point is near enough to a critical point
+for the loss and index to match the true value is natural.
+However, in the absence of guarantees on the smoothness of the behavior of
+the Hessian (and its spectrum) around the critical point,
+the numerical value sufficient to guarantee correctness is unclear.
+The observation of gradient-flat regions at extremely low
+gradient norm and the separation of these values,
+in terms of loss-index relationship,
+from the bulk of the observations
+suggest that there may be spurious targets
+of convergence for critical point-finding methods
+even at such low gradient norm.
+Alternatively, they may in fact be near real critical points,
+and so indicate that the simple, convex picture of loss-index relationship
+painted by the numerical results in~\cite{dauphin2014} and~\cite{pennington2017}
+is incomplete.
+Furthermore, our observation of singular Hessians
+at low gradient norm
+suggests that some approximate saddle points of neural network losses
+may be degenerate (as defined in~\cite{jin2018a})
+and non-strict (as defined in~\cite{lee2016}),
+which indicates that gradient descent may be attracted to these points,
+according to the analyses in~\cite{jin2018a} and~\cite{lee2016}.
+These points need not be local minima.
+However, in two cases we observe the lowest-index saddles at low values of the loss
+(see \figureref{gfp-dnn}, \figureref{gfp-mlp})
+and so these analyses still predict that gradient descent will
+successfully reduce the loss,
+even if it doesn't find a local minimum.
+In the third case,
+an over-parameterized network \figureref{gfp-mem},
+we do observe a bad local minimum,
+as predicted in~\cite{ding2019}
+for networks capable of achieving 0 training error.
+
+Our results motivate a revisiting of the numerical results
+in~\cite{dauphin2014} and~\cite{pennington2017}.
+Looking back at Figure 4 of~\cite{dauphin2014},
+we see that their non-convex Newton method,
+a second-order optimization algorithm designed to avoid saddle points
+by reversing the Newton update along directions of negative curvature,
+appears to terminate at a gradient norm of order 1.
+This is only a single order of magnitude lower than what was observed during training.
+It is likely that this point was either in a gradient-flat region
+or otherwise had sufficient gradient norm in the Hessian kernel to
+slow the progress of their algorithm.
+This suggests that second-order methods
+designed for optimization,
+which use the loss as a merit function,
+rather than norms of the gradient,
+can terminate in gradient-flat regions.
+In this case, the merit function encourages
+convergence to points where the loss,
+rather than the gradient norm, is small,
+but it still cannot guarantee convergence to a critical point.
+The authors of~\cite{dauphin2014} do not report a gradient norm cutoff,
+among other details needed to recreate their critical point-finding experiments,
+so it is unclear to which kind of points they converged.
+If, however, the norms are as large as those of the targets of
+their non-convex Newton method,
+in accordance with our experience with damped Newton methods
+and that of~\cite{coetzee1997},
+then the loss-index relationships reported in their Figure 1
+are likely to be for gradient-flat points,
+rather than critical points.
+
+The authors of~\cite{pennington2017}
+do report a squared gradient norm cutoff of 1e-6.
+This cutoff is right in the middle of the bulk of values
+we observed,
+and which we labeled gradient-flat regions and
+points of spurious convergence,
+based on the experiments in \sectionref{dlae-results},
+which separates a small fraction of runs from this bulk.
+This suggests that some of their putative critical points were gradient-flat points.
+Their Figure 6 shows a disagreement between their predictions for the index,
+based on a loss-weighted mixture of Wishart and Wigner random matrices,
+and their observations.
+We speculate that some of this gap is due to their method
+recovering approximate gradient-flat points rather than critical points.
+
+Even in the face of results indicating the existence of bad local minima%
+~\cite{ding2019},
+it remains possible that bad local minima of the loss
+are avoided by initialization and optimization strategies.
+For example ReLU networks suffer from bad local minima
+when one layer's activations are all $0$,
+or when the biases are initialized at too small of a value%
+~\cite{holzmller2020},
+but careful initialization and training can avoid the issue.
+Our results do not directly invalidate
+this hypothesis,
+but they do call the supporting numerical evidence into question.
+Our observation of gradient-flat regions on almost every single run
+suggests that, while critical points are hard to find
+and may even be rare,
+regions where gradient norm is extremely small are neither.
+For non-smooth losses,
+e.g.~those of ReLU networks or networks with max-pooling,
+whose loss gradients can have discontinuities,
+critical points need not exist,
+but gradient-flat regions may.
+Indeed, in some cases, the only differentiable minima
+in ReLU networks are also flat%
+~\cite{laurent2017}.
+
+Other types of critical point-finding methods are not necessarily
+attracted to gradient-flat regions, in particular Newton homotopy methods
+(first used on neural networks in the 90s~\cite{coetzee1997},
+then revived in the 2010s~\cite{ballard2017,mehta2018b}),
+which are popular in algebraic geometry~\cite{bates2013}.
+However, singular Hessians still cause issues:
+for a singular Hessian $H$, the curve to be continued by the homotopy
+becomes a manifold with dimension 1 + $\co\rk\left(H\right)$,
+and orientation becomes more difficult.
+This can be avoided by removing the singularity of the Hessian,
+e.g.~by the randomly-weighted regularization method in~\cite{mehta2018a}.
+However, while these techniques may make it possible to find
+critical points,
+they fundamentally alter the loss surface,
+limiting their utility in drawing conclusions about other features
+of the loss.
+
+The authors of~\cite{sagun2017} emphasize that
+when the Hessian is singular everywhere,
+the notion of a basin of attraction is misleading,
+since targets of convergence form
+connected manifolds
+and some assumptions in theorems guaranteeing first-order convergence
+become invalid~\cite{jin2018a},
+though with sufficient, if unrealistic, over-parameterization
+convergence can be proven~\cite{du2018}.
+They speculate that a better approach
+to understanding the behavior of optimizers
+focuses on their exploration of the sub-level sets of the loss.
+Our results corroborate that speculation and
+further indicate that this flatness means using second-order methods
+to try to accelerate exploration of these regions
+in search of minimizers
+is likely to fail:
+the alignment of the gradient with the Hessian's approximate kernel
+will tend to produce extremely large steps, for some methods,
+or no acceleration and even convergence to non-minimizers,
+for others.
+
+Our observation of ubiquitous gradient-flatness further
+provides an alternative explanation
+for the success and popularity
+of approximate second-order optimizers for neural networks,
+like K-FAC~\cite{martens2015},
+which uses a layerwise approximation to the Hessian.
+These methods are typically motivated by appeals to the computational cost
+of even Hessian-free exact second-order methods
+and their brittleness in the stochastic (non-batch) setting.
+However, exact second-order methods are only justified
+when the second-order model is good,
+and at an exact gradient-flat point,
+the second-order model can be infinitely bad,
+in a sense, along the direction of the gradient.
+Approximations need not share this property.
+Even more extreme approximations,
+like the diagonal approximations in the adaptive gradient family
+(e.g.~AdaGrad~\cite{duchi2011}, Adam~\cite{kingma2014}),
+behave very reasonably in gradient-flat regions:
+they smoothly scale up the gradient in the directions in which
+it is small and changing slowly,
+without making a quadratic model that is optimal
+in a local sense but poor in a global sense.
+
+Overall, our results underscore the difficulty of searching
+for critical points of singular non-convex functions,
+including deep network loss functions,
+and shed new light on other numerical results in this field.
+In this setting, second-order methods for finding critical points can fail badly,
+by converging to gradient-flat points.
+This failure can be hard to detect unless it is specifically measured.
+Furthermore, gradient-flat points are generally places where
+quadratic approximations become untrustworthy,
+and so our observations are of relevance for the
+design of exact and approximate second-order optimization methods as well.
 
 \onlyinsubfile{\printbibliography}
 
