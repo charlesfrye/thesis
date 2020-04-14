@@ -603,8 +603,10 @@ of the deep linear autoencoder problem outlined above,
 the three critical point finding methods,
 Newton-MR, damped Newton, and
 gradient norm minimization by gradient descent with backtracking line search
-(BTLS-GNM)
-have wildly different performance.
+(BTLS-GNM),
+have wildly different performance,
+even though all three are capable of finding numerical critical points
+with the same loss and index as the analytical critical points.
 
 \begin{figure}[h]
 	\begin{center}
@@ -625,6 +627,92 @@ have wildly different performance.
 	}
 	\figurelabel{perf-comparison}
 \end{figure}
+
+
+Results for all three algorithms appear in \figureref{perf-comparison}.
+The first row of panels, A-C,
+presents squared gradient norms for each algorithm
+across iterations.
+Results for 100 runs of Newton-MR appear in panel A,
+for 100 runs of damped Newton in panel B,
+and for 60 runs of BTLS-GNM in panel C.
+Runs are terminated either due to hitting the maximum number of iterations
+or due to hitting the minimum step size of the backtracking line search
+without finding an acceptable update.
+Note that BTLS-GNM is allowed 25000 iterations before termination,
+while the Newton methods are only allowed 500.
+This algorithm only requires a single Hessian-vector multiplication
+outside of the backtracking line search phase,
+which is much less than the maximum of $O(n)$
+multiplications required by the inexact Newton methods.
+Traces are plotted transparently to allow a rough estimation of density.
+Runs that terminate with squared gradient norm above 1e-10
+are in \failcolor{},
+others in \successcolor{}.
+Note that a large number of damped Newton and BTLS-GNM runs
+terminate in a small number of iterations
+and with squared gradient norm above 1e-10.
+
+Notably, a number of runs of all three algorithms,
+but especially BTLS-GNM,
+obtain much lower values of the squared gradient norm.
+These are runs that terminate at or near the zero vector,
+which is a critical point for this problem.
+Floating point numbers are much denser near the origin,
+and so more accurate computations,
+and so lower gradient norms, are possible.
+The loss of this critical point is approximately 8.5
+and the index 0.5.
+
+Runs that terminated with squared gradient norm above 1e-10 were considered failures.
+This filter value was determined by comparing loss and index values
+at candidate critical points to the loss and index at analytical critical points,
+as in \figureref{perf-comparison}D-F (only successful runs shown).
+A value of 1e-10 was sufficient to obtain the close match there displayed,
+while a value of 1e-8 or higher was not.
+Note the greater number and diversity of critical points recovered by Newton-MR
+(\figureref{perf-comparison}D)
+compared to the damped Newton method
+(\figureref{perf-comparison}E)
+and especially to BTLS-GNM
+(\figureref{perf-comparison}F;\@
+but note that results from BTLS-GNM
+are based on 60 runs, versus 100 for the Newton methods).
+
+The relative performance of the three algorithms
+is summarized in \tableref{perf-comparison}.
+Newton-MR was clearly superior in terms of the fraction of runs
+that ended in successes
+(80\% versus 45\% for damped Newton and 35\% for BTLS-GNM)
+and in terms of the elapsed walltime per success
+(20 min versus 1hr 45 minutes for damped Newton and 35\% for BTLS-GNM).
+
+\begin{table}[h]
+	\begin{center}
+	\begin{tabular}{rccc}
+\textbf{Algorithm} & \textbf{Pseudocode} & \textbf{Fraction Successful} & \textbf{Time per Success} \\
+		Newton-MR & \algoref{nmr} & 80\% $\pm$ 4 & 20 min\\
+		Damped Newton & \algoref{damped-newton} & 45\% $\pm$ 5 & 1hr 45 min\\
+		BTLS-GNM & \algoref{gnm}\footnotemark & 35\% $\pm$ 6 & 1hr 15 min
+	\end{tabular}
+	\end{center}
+	\caption{\textbf{Newton-MR Outperforms Damped Newton and BTLS-GNM}.}{%
+		The fraction of successful runs is given as a percentage with a
+		standard error based on a Gaussian approximation
+		to the sampling distribution of the percentage.
+		Newton-MR and Newton-TR results based on 100 runs;
+		BTLS-GNM results based on 60 runs.
+		Runtimes are based on walltime on commodity hardware
+		and are to be regarded as highly approximate.
+	}\tablelabel{perf-comparison}
+\end{table}
+\footnotetext{The indicated pseudocode algorithm is for gradient norm minimization
+by gradient descent.
+These results are for gradient norm minimization
+by gradient descent with backtracking line search,
+which adds a line search step akin to \algoref{roosta-btls},
+but with a convergence criterion based on the Wolfe conditions%
+~\cite{wolfe1971} applied to the squared gradient norm.}
 
 \subsubsection{Cutoffs Must be Set Strictly}%
 \sectionlabel{dlae-cutoffs}
