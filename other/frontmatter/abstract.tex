@@ -1,6 +1,40 @@
 \begin{abstract}
 
-Something something optimization
-something something neural networks.
+	Despite the fact that the loss functions of deep neural networks
+	are highly non-convex, gradient-based optimization algorithms
+	converge to approximately the same performance from many random initial points.
+	This makes neural networks easy to train,
+	which, combined with their high representational capacity
+	and implicit and explicit regularization strategies,
+	leads to machine-learned algorithms of high quality
+	with reasonable computational cost in a wide variety of domains.
+
+	One thread of work has focused on explaining this phenomenon
+	by numerically characterizing the local curvature at
+	\emph{critical points} of the loss function,
+	where gradients are zero.
+	Such studies have reported that the loss functions
+	used to train neural networks have no local minima
+	that are much worse than global minima,
+	backed up by arguments from random matrix theory.
+	More recent theoretical work,
+	however, has suggested that bad local minima do exist.
+
+	In this dissertation,
+	we show that one cause of this gap is that
+	the methods used to numerically find critical points
+	of neural network losses suffer, ironically,
+	from a bad local minimum problem of their own.
+	This problem is caused by \emph{gradient-flat points},
+	where the gradient vector is in
+	the kernel of the Hessian matrix
+	of second partial derivatives.
+	At these points, the loss function becomes,
+	to second order, linear in the direction of the gradient,
+	which violates the assumptions necessary to guarantee
+	convergence for second-order critical point-finding methods.
+	We present evidence that approximately gradient-flat points
+	are a common feature of several prototypical neural network
+	loss functions.
 
 \end{abstract}
