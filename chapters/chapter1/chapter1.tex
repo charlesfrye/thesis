@@ -1002,7 +1002,7 @@ zero eigenvalue is $0$.
 This means that their kernel, defined below, consists only of the zero vector,
 and the matrices almost surely have inverses.
 
-\begin{definition}{Kernel, Co-Kernel, and Rank}{kernel}
+\begin{definition}{Kernel and Co-Kernel}{kernel}
 	For a matrix $M\in\R^{m\times n}$,
 	we define the $\emph{kernel}$ of $M$,
 	denoted $\ker M$,
@@ -1016,17 +1016,19 @@ and the matrices almost surely have inverses.
 	\begin{equation}\equationlabel{def-coker}
 		\co\ker M \defeq \Set{v \in \R^n \suchthat Mv \neq 0} \cup \Set{0}
 	\end{equation}
-	These two subspaces are \emph{complementary}:
-	their union is $\R^n$
-	and their dimensions add up to $n$.
-	The \emph{rank} of $M$, $\rk M$,
-	is equal to the dimension of $\co\ker M$.
-	A matrix with rank less than the minimum
-	of its input and output dimension
-	is said to have \emph{low rank}.
 \end{definition}
 
-This is in stark contrast to the Hessian matrices
+These two subspaces are \emph{complementary}:
+their union is $\R^n$
+and their dimensions add up to $n$.
+The \emph{rank} of $M$, $\rk M$,
+is equal to the dimension of $\co\ker M$.
+A matrix with rank less than the minimum
+of its input and output dimension
+is said to have \emph{low rank}.
+
+The full rank of Wigner random matrices
+is in stark contrast to that of Hessian matrices
 of typical neural network loss functions~\cite{sagun2017}.
 There are many $0$ eigenvalues,
 along with some eigenvalues at much larger values,
